@@ -6,6 +6,9 @@ which covers user-visible releases across the whole package.
 
 ## Pyplot limit and tick return values — 2026-10-25 (Matplotlib 3.11 reference)
 
+- Reference: pinned Matplotlib revision `bde111fb4e` (`v3.11.0-348-gbde111fb4e`, 2026-07-10).
+- Inventory: unchanged 66-method `Axes` Plotting surface (0 additions, 0 removals).
+- Compatibility levels: limit and tick location values follow the existing exact-geometry level; returned label and legend handles follow equivalent semantics. No compatibility family changes level.
 - `xlim`/`ylim` return the live limits on reads and writes, accept the `xmin`/`xmax` and `ymin`/`ymax` aliases, and reject passing an alias together with its canonical bound.
 - `xticks`/`yticks` getters do not change autoscale. Minor-tick reads and setter results return minor locations and labels instead of accidentally returning major ticks. Minor tick locators still compute locations without requiring a render; manual minor tick setters remain compatibility no-ops.
 - `legend()` returns the live `Legend` handle so callers can adjust it after creation.

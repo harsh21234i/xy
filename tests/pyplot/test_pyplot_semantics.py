@@ -20,6 +20,14 @@ def test_limit_helpers_accept_matplotlib_bound_aliases() -> None:
         xyplt.xlim(left=0.0, xmin=1.0)
     with pytest.raises(TypeError, match="both 'bottom' and 'ymin'"):
         xyplt.ylim(bottom=0.0, ymin=1.0)
+    with pytest.raises(TypeError, match="limit pair"):
+        xyplt.xlim((0.0, 1.0), xmax=2.0)
+    with pytest.raises(TypeError, match="limit pair"):
+        xyplt.xlim((0.0, 1.0), right=2.0)
+    with pytest.raises(TypeError, match="limit pair"):
+        xyplt.ylim((0.0, 1.0), ymax=2.0)
+    with pytest.raises(TypeError, match="limit pair"):
+        xyplt.ylim((0.0, 1.0), top=2.0)
     assert ax.get_xlim() == (2.0, 8.0)
     assert ax.get_ylim() == (3.0, 7.0)
 
@@ -46,3 +54,25 @@ def test_minor_tick_setter_returns_current_minor_ticks_not_major_ticks() -> None
     np.testing.assert_array_equal(ax.get_yticks(), major_y)
     assert xlabels == ax.xaxis.get_minorticklabels()
     assert ylabels == ax.yaxis.get_minorticklabels()
+
+
+@pytest.mark.parametrize("figsize", [(2.5, 2.5), (5.0, 3.0)])
+def test_minor_tick_getters_match_rendered_locations_at_figure_size(
+    figsize: tuple[float, float],
+) -> None:
+    fig, ax = xyplt.subplots(figsize=figsize)
+    ax.plot([0.0, 10.0], [0.0, 10.0])
+    ax.set_xlim(0.0, 10.0)
+    ax.set_ylim(0.0, 10.0)
+    ax.minorticks_on()
+
+    for size in (figsize, (3.0, 2.0)):
+        fig.set_size_inches(size)
+        # Query before each build: the getter must use the current dimensions,
+        # including after a prior render cached a different locator hint.
+        x_minor = ax.get_xticks(minor=True)
+        y_minor = ax.get_yticks(minor=True)
+        spec = fig._charts()[0].figure().build_payload_split()[0]
+
+        np.testing.assert_array_equal(x_minor, spec["x_axis"]["minor_tick_values"])
+        np.testing.assert_array_equal(y_minor, spec["y_axis"]["minor_tick_values"])

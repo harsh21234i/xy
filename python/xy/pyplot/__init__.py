@@ -82,6 +82,8 @@ from ._ticker import (
 )
 from ._translate import not_implemented
 
+_MINOR_TICK_KEY = "minor"
+
 __all__ = [
     "AutoLocator",
     "AutoMinorLocator",
@@ -2709,6 +2711,8 @@ def xlim(
         if left is not None:
             raise TypeError("Cannot pass both 'left' and 'xmin'")
         left = xmin
+    if isinstance(left, (tuple, list)) and (right is not None or xmax is not None):
+        raise TypeError("Cannot combine a limit pair with 'right' or 'xmax'")
     if xmax is not None:
         if right is not None:
             raise TypeError("Cannot pass both 'right' and 'xmax'")
@@ -2728,6 +2732,8 @@ def ylim(
         if bottom is not None:
             raise TypeError("Cannot pass both 'bottom' and 'ymin'")
         bottom = ymin
+    if isinstance(bottom, (tuple, list)) and (top is not None or ymax is not None):
+        raise TypeError("Cannot combine a limit pair with 'top' or 'ymax'")
     if ymax is not None:
         if top is not None:
             raise TypeError("Cannot pass both 'top' and 'ymax'")
@@ -2759,8 +2765,13 @@ def xticks(
     ``minor=True`` reads minor ticks; setting minor ticks remains a no-op.
     """
     axes = gca()
-    minor = bool(kwargs.get("minor", False))
-    if ticks is None and labels is None and rotation is None and not (set(kwargs) - {"minor"}):
+    minor = bool(kwargs.get(_MINOR_TICK_KEY, False))
+    if (
+        ticks is None
+        and labels is None
+        and rotation is None
+        and not (set(kwargs) - {_MINOR_TICK_KEY})
+    ):
         handles = axes.xaxis.get_minorticklabels() if minor else axes.get_xticklabels()
         return axes.get_xticks(minor=minor), handles
     axes.set_xticks(ticks, labels, rotation=rotation, **kwargs)
@@ -2777,8 +2788,13 @@ def yticks(
 ) -> tuple[np.ndarray, list[Any]]:
     """Get or set y ticks (see `xticks`)."""
     axes = gca()
-    minor = bool(kwargs.get("minor", False))
-    if ticks is None and labels is None and rotation is None and not (set(kwargs) - {"minor"}):
+    minor = bool(kwargs.get(_MINOR_TICK_KEY, False))
+    if (
+        ticks is None
+        and labels is None
+        and rotation is None
+        and not (set(kwargs) - {_MINOR_TICK_KEY})
+    ):
         handles = axes.yaxis.get_minorticklabels() if minor else axes.get_yticklabels()
         return axes.get_yticks(minor=minor), handles
     axes.set_yticks(ticks, labels, rotation=rotation, **kwargs)

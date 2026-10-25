@@ -6762,8 +6762,19 @@ class Axes(PlotTypeMixin):
             # fills a copied wire payload; getters must return the same
             # locations without requiring a render or mutating axis state.
             minor_props = dict(props)
-            major_locator = host._tickers.get((key, "major_locator"))
-            nbins_hint = getattr(major_locator, "_nbins_hint", None)
+            figure = host.figure
+            if host._plot_box_px is None and hasattr(figure, "_grid_cell_sizes"):
+                widths, heights = figure._grid_cell_sizes()
+                index = host._subplot_index
+                if index is None:
+                    index = figure._axes.index(host)
+                width = widths[index % figure._ncols]
+                height = heights[index // figure._ncols]
+            else:
+                width, height = rc_figsize_px(figure._figsize, figure._dpi)
+            # Rendering recomputes this hint from the live chart size on every
+            # build, so a locator's cached hint can be stale after resizing.
+            nbins_hint = host._auto_tick_counts(props, width, height)[key]
             host._apply_tickers(key, minor_props, nbins_hint)
             return np.asarray(
                 _scale_values(
