@@ -6757,11 +6757,18 @@ class Axes(PlotTypeMixin):
         host = base._shared_ticker_source(key)
         props = host._axis[key]
         if minor:
-            key = "y2" if axis == "y" and self._y2_of is not None else axis
+            # Materialize minor positions against a throwaway props mapping.
+            # `_apply_tickers` normally runs while building a chart, where it
+            # fills a copied wire payload; getters must return the same
+            # locations without requiring a render or mutating axis state.
+            minor_props = dict(props)
+            major_locator = host._tickers.get((key, "major_locator"))
+            nbins_hint = getattr(major_locator, "_nbins_hint", None)
+            host._apply_tickers(key, minor_props, nbins_hint)
             return np.asarray(
                 _scale_values(
-                    props.get("minor_tick_values", []),
-                    (self._y2_of or self)._scale_specs[key],
+                    minor_props.get("minor_tick_values", []),
+                    host._scale_specs[key],
                     inverse=True,
                 ),
                 dtype=float,

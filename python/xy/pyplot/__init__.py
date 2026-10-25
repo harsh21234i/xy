@@ -2694,21 +2694,44 @@ def ylabel(label: str, **kwargs: Any) -> None:
 def xlim(
     left: float | LimitsLike | None = None,
     right: float | None = None,
+    *,
+    xmin: float | None = None,
+    xmax: float | None = None,
 ) -> tuple[float, float]:
     """Get or set the x limits of the current axes.
 
     Call as ``xlim(left, right)``, ``xlim((left, right))``, or with
-    ``left=``/``right=``. With no arguments, return the current limits
-    without changing the automatic view. A descending pair inverts the axis.
+    ``left=``/``right=`` (aliases: ``xmin=``/``xmax=``). With no arguments,
+    return the current limits without changing the automatic view. A
+    descending pair inverts the axis.
     """
+    if xmin is not None:
+        if left is not None:
+            raise TypeError("Cannot pass both 'left' and 'xmin'")
+        left = xmin
+    if xmax is not None:
+        if right is not None:
+            raise TypeError("Cannot pass both 'right' and 'xmax'")
+        right = xmax
     return gca().set_xlim(left, right)
 
 
 def ylim(
     bottom: float | LimitsLike | None = None,
     top: float | None = None,
+    *,
+    ymin: float | None = None,
+    ymax: float | None = None,
 ) -> tuple[float, float]:
-    """Get or set the y limits of the current axes (forms as in `xlim`)."""
+    """Get or set y limits, with `ymin`/`ymax` aliases for `bottom`/`top`."""
+    if ymin is not None:
+        if bottom is not None:
+            raise TypeError("Cannot pass both 'bottom' and 'ymin'")
+        bottom = ymin
+    if ymax is not None:
+        if top is not None:
+            raise TypeError("Cannot pass both 'top' and 'ymax'")
+        top = ymax
     return gca().set_ylim(bottom, top)
 
 
@@ -2733,14 +2756,16 @@ def xticks(
 
     With no tick arguments, return the current locations and label handles.
     ``rotation`` (degrees) and supported text keywords style the labels.
+    ``minor=True`` reads minor ticks; setting minor ticks remains a no-op.
     """
     axes = gca()
     minor = bool(kwargs.get("minor", False))
     if ticks is None and labels is None and rotation is None and not (set(kwargs) - {"minor"}):
-        labels = axes.xaxis.get_minorticklabels() if minor else axes.get_xticklabels()
-        return axes.get_xticks(minor=minor), labels
+        handles = axes.xaxis.get_minorticklabels() if minor else axes.get_xticklabels()
+        return axes.get_xticks(minor=minor), handles
     axes.set_xticks(ticks, labels, rotation=rotation, **kwargs)
-    return axes.get_xticks(), axes.get_xticklabels()
+    handles = axes.xaxis.get_minorticklabels() if minor else axes.get_xticklabels()
+    return axes.get_xticks(minor=minor), handles
 
 
 def yticks(
@@ -2754,10 +2779,11 @@ def yticks(
     axes = gca()
     minor = bool(kwargs.get("minor", False))
     if ticks is None and labels is None and rotation is None and not (set(kwargs) - {"minor"}):
-        labels = axes.yaxis.get_minorticklabels() if minor else axes.get_yticklabels()
-        return axes.get_yticks(minor=minor), labels
+        handles = axes.yaxis.get_minorticklabels() if minor else axes.get_yticklabels()
+        return axes.get_yticks(minor=minor), handles
     axes.set_yticks(ticks, labels, rotation=rotation, **kwargs)
-    return axes.get_yticks(), axes.get_yticklabels()
+    handles = axes.yaxis.get_minorticklabels() if minor else axes.get_yticklabels()
+    return axes.get_yticks(minor=minor), handles
 
 
 def tight_layout(**kwargs: Any) -> None:

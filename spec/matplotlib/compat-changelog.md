@@ -4,6 +4,12 @@ This changelog records changes to the upstream compatibility target and to the
 meaning of xy's compatibility levels. It complements the project changelog,
 which covers user-visible releases across the whole package.
 
+## Pyplot limit and tick return values — 2026-10-25 (Matplotlib 3.11 reference)
+
+- `xlim`/`ylim` return the live limits on reads and writes, accept the `xmin`/`xmax` and `ymin`/`ymax` aliases, and reject passing an alias together with its canonical bound.
+- `xticks`/`yticks` getters do not change autoscale. Minor-tick reads and setter results return minor locations and labels instead of accidentally returning major ticks. Minor tick locators still compute locations without requiring a render; manual minor tick setters remain compatibility no-ops.
+- `legend()` returns the live `Legend` handle so callers can adjust it after creation.
+
 ## Patch bodies and geometry — 2026-07-30 (Matplotlib 3.11.1 reference)
 
 - `xy.pyplot.Axes.add_patch` now fills a patch instead of drawing only its
