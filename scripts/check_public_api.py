@@ -49,7 +49,7 @@ HEAVY_XY_IMPORTS = {
     "xy.widget",
 }
 HEAVY_IMPORTS = HEAVY_THIRD_PARTY_IMPORTS | HEAVY_XY_IMPORTS
-COMPONENT_REEXPORTS = {"CHART_DOM_SLOTS"}
+COMPONENT_REEXPORTS = {"CHART_DOM_SLOTS", "structural_probe"}
 CHROME_RETURN_TYPES = {"Colorbar", "Interaction", "Legend", "Modebar", "Theme", "Tooltip"}
 SUPPORT_RETURN_TYPES = {"Animation", "ExportConfig", "FacetChart", "Spring"}
 SPECIAL_PUBLIC_CHART_METHODS = {"_repr_html_"}
@@ -109,7 +109,7 @@ class PublicApiInventory:
 
 
 PUBLIC_API_MANIFEST = PublicApiInventory(
-    component_reexports=("CHART_DOM_SLOTS",),
+    component_reexports=("CHART_DOM_SLOTS", "structural_probe"),
     component_types=(
         "Animation",
         "Annotation",
@@ -136,6 +136,7 @@ PUBLIC_API_MANIFEST = PublicApiInventory(
         "ecdf",
         "error_band",
         "errorbar",
+        "funnel",
         "heatmap",
         "hexbin",
         "hist",
@@ -177,6 +178,7 @@ PUBLIC_API_MANIFEST = PublicApiInventory(
         "ecdf_chart",
         "error_band_chart",
         "errorbar_chart",
+        "funnel_chart",
         "heatmap_chart",
         "hexbin_chart",
         "histogram_chart",
@@ -487,7 +489,13 @@ def validate_public_api_manifest(
     return errors
 
 
-def _has_doc_reference(text: str, name: str, *, receiver: str | None = None) -> bool:
+def _has_doc_reference(
+    text: str,
+    name: str,
+    *,
+    receiver: str | None = None,
+    allow_bare: bool = False,
+) -> bool:
     tokens = [f"`{name}`", f"`{name}()`", f"`{name}(`"]
     if receiver is not None:
         tokens.extend(
@@ -497,10 +505,11 @@ def _has_doc_reference(text: str, name: str, *, receiver: str | None = None) -> 
                 f"{receiver}.{name}(",
             )
         )
-    return (
-        any(token in text for token in tokens)
-        or re.search(rf"(?<![A-Za-z0-9_]){re.escape(name)}\s*\(", text) is not None
-    )
+    if any(token in text for token in tokens):
+        return True
+    if receiver is not None or not allow_bare:
+        return False
+    return re.search(rf"(?<![A-Za-z0-9_.]){re.escape(name)}\s*\(", text) is not None
 
 
 def validate_docs_inventory(
