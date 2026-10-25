@@ -42,6 +42,9 @@ jobs:
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
           node-version: "22"
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
+        with:
+          bun-version: "1.2.20"
 
       - name: Verify audit inventory
         run: python3 scripts/verify_dependency_lock_inventory.py
@@ -70,7 +73,6 @@ jobs:
 
       - name: Audit Bun lock
         run: |
-          npm install --global bun@1.2.20
           cd docs/app/reflex.lock
           bun install --frozen-lockfile
           bun audit --audit-level=high

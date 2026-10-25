@@ -1809,7 +1809,9 @@ def test_to_png_full_path(tmp_path):
         pytest.skip("no supported browser for PNG export")
     fig = Figure(width=320, height=200).line(np.arange(50.0), np.sin(np.arange(50.0)))
     out = tmp_path / "chart.png"
-    data = fig.to_png(str(out), engine=export.Engine.chromium)
+    # The figure contains only trusted test data; keep this browser smoke
+    # portable to CI containers that cannot start Chromium's sandbox.
+    data = fig.to_png(str(out), engine=export.Engine.chromium, sandbox=False)
     assert data[:8] == b"\x89PNG\r\n\x1a\n"
     assert out.read_bytes() == data
     # 320x200 at default scale=2 -> 640x400
@@ -2025,7 +2027,10 @@ def test_html_to_png_fails_closed_when_sandboxed_browser_crashes(monkeypatch):
 
     monkeypatch.setattr(export.subprocess, "run", fake_run)
 
-    with pytest.raises(RuntimeError, match="sandboxed launch produced no screenshot"):
+    with pytest.raises(
+        RuntimeError,
+        match=r"sandboxed launch produced no screenshot.*pass sandbox=False only for HTML you trust",
+    ):
         export.html_to_png("<!doctype html>", 320, 200)
 
     assert len(seen) == 1

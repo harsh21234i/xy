@@ -198,6 +198,8 @@ prevents an implicit security downgrade.
 CI or container environments that cannot launch a sandboxed browser. The
 security rationale and historical audit are recorded in
 [XY-SEC-2026-03](../process/security-audit-2026-07-06.md#status-as-of-2026-07-20-xy-sec-2026-03).
+Repository-owned browser smoke tests use `sandbox=False` only with HTML generated
+from controlled test fixtures; application exports keep the sandboxed default.
 
 ## 8. Batch export
 

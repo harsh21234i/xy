@@ -46,7 +46,10 @@ def test_browser_session_does_not_retry_without_sandbox(monkeypatch):
     monkeypatch.setattr(export, "find_browser", lambda explicit=None: "/fake/chrome")
     monkeypatch.setattr(_chromium, "ChromiumSession", FailingSession)
 
-    with pytest.raises(_chromium.ChromiumError, match="sandbox unavailable"):
+    with pytest.raises(
+        _chromium.ChromiumError,
+        match=r"sandbox unavailable.*pass sandbox=False only for HTML you trust",
+    ):
         export._browser_session(gl="software", sandbox=True)
 
     assert calls == [("/fake/chrome", "software", True)]

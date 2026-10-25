@@ -63,6 +63,10 @@ _B64_CHUNK_BYTES = 48 * 2**20
 # executable paths; discovery remains an implementation detail.
 _BROWSER_ENV = "XY_BROWSER"
 _CHROMIUM_ENV = "XY_CHROMIUM"
+_SANDBOX_FAILURE_HINT = (
+    "If Chromium cannot start its sandbox in this environment, pass sandbox=False "
+    "only for HTML you trust."
+)
 _BROWSER_NAMES = (
     "chrome-headless-shell",
     "chromium",
@@ -611,9 +615,10 @@ def html_to_png(
         if not shot.exists():
             first_tail = (proc.stderr or "")[-500:]
             mode = "sandboxed" if sandbox else "unsandboxed"
+            hint = f" {_SANDBOX_FAILURE_HINT}" if sandbox else ""
             raise RuntimeError(
                 f"Chromium {mode} launch produced no screenshot "
-                f"(exit {proc.returncode}): {first_tail}"
+                f"(exit {proc.returncode}): {first_tail}{hint}"
             )
         data = shot.read_bytes()
     if data[:8] != b"\x89PNG\r\n\x1a\n":
@@ -1030,9 +1035,14 @@ def _browser_session(*, gl: str, sandbox: bool) -> "Any":
             "or install a supported browser. Native export (engine=Engine.default) "
             "and HTML export need nothing extra."
         )
-    from ._chromium import ChromiumSession
+    from ._chromium import ChromiumError, ChromiumSession
 
-    return ChromiumSession(exe, gl=gl, sandbox=sandbox)
+    try:
+        return ChromiumSession(exe, gl=gl, sandbox=sandbox)
+    except ChromiumError as exc:
+        if sandbox:
+            raise ChromiumError(f"{exc} {_SANDBOX_FAILURE_HINT}") from exc
+        raise
 
 
 def _native_image(

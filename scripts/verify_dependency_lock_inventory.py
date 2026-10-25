@@ -61,8 +61,7 @@ def main() -> int:
             print(f"missing expected dependency lockfiles: {missing}", file=sys.stderr)
         if unexpected:
             print(
-                "dependency lockfiles missing from the audit inventory: "
-                f"{unexpected}",
+                f"dependency lockfiles missing from the audit inventory: {unexpected}",
                 file=sys.stderr,
             )
         return 1
