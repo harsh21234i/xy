@@ -59,10 +59,16 @@ toolchain with `cargo`, `rustc`, and clippy for native-core checks. If clippy is
 missing, run `rustup component add clippy`. If you are only touching docs or
 pure Python shell code, `make check` is the fast non-JS/non-Rust gate.
 
-When canonical API prose or examples change, run the focused docs gate:
+When canonical API prose changes, run the docs gate:
 
 ```bash
 make check-docs
+```
+
+When canonical API examples change, run the example gate:
+
+```bash
+make check-examples
 ```
 
 When packaging, workflows, or source-distribution/wheel contents change, run:
