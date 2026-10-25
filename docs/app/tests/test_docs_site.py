@@ -938,9 +938,21 @@ def test_handwritten_output_reference_tracks_the_public_api() -> None:
         block for block in parse_document(method_reference).blocks if isinstance(block, CodeBlock)
     ]
 
-    assert len(method_blocks) == 4
+    assert len(method_blocks) == 5
     assert all(block.language == "python" for block in method_blocks)
     assert "animation_progress=None" in method_blocks[0].content
+
+    view_selection_block = next(
+        block for block in method_blocks if "chart.set_view" in block.content
+    )
+    for method in (
+        "chart.set_view(",
+        "chart.reset_view(",
+        "chart.select(",
+        "chart.clear_selection(",
+        "chart.view_state()",
+    ):
+        assert method in view_selection_block.content
     for method in (xy.Chart.to_html, xy.Chart.html):
         assert "animation_progress" in inspect.signature(method).parameters
 
