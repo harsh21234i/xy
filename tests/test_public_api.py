@@ -37,6 +37,19 @@ def test_public_api_checker_accepts_current_surface() -> None:
     assert check_public_api.check_public_api() == []
 
 
+def test_public_api_manifest_catches_removed_component_factory() -> None:
+    fake, fake_components = _fake_declarative_modules()
+    fake_components.__all__.remove("tooltip")
+    del fake_components.tooltip
+
+    errors = check_public_api.validate_declarative_api_contract(
+        fake,
+        fake_components,
+        manifest=check_public_api.PUBLIC_API_MANIFEST,
+    )
+
+    assert any("chrome_factories" in error and "tooltip" in error for error in errors)
+
 def test_fresh_import_budget_rejects_eager_modules(monkeypatch: pytest.MonkeyPatch) -> None:
     def fake_run(*args, **kwargs):
         del args, kwargs
@@ -356,6 +369,25 @@ def test_declarative_api_checker_reports_non_string_component_export() -> None:
     errors = check_public_api.validate_declarative_api_contract(fake, fake_components)
 
     assert any("xy.components.__all__" in error and "42" in error for error in errors)
+
+
+def test_public_api_docs_require_receiver_qualified_chart_methods() -> None:
+    assert not check_public_api._has_doc_reference(
+        "The prose mentions figure() for another object.",
+        "figure",
+        receiver="chart",
+    )
+    assert check_public_api._has_doc_reference(
+        "Call `chart.figure()` to build the figure.",
+        "figure",
+        receiver="chart",
+    )
+    assert not check_public_api._has_doc_reference("unrelated figure() text", "figure")
+    assert check_public_api._has_doc_reference(
+        "unrelated figure() text",
+        "figure",
+        allow_bare=True,
+    )
 
 
 def test_public_api_checker_rejects_missing_method_docs(tmp_path: Path) -> None:
