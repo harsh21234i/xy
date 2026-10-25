@@ -507,6 +507,9 @@ def _has_doc_reference(
         )
     if any(token in text for token in tokens):
         return True
+    reference = re.escape(f"{receiver}." if receiver is not None else "") + re.escape(name)
+    if re.search(rf"(?<![A-Za-z0-9_.])`{reference}(?:\s*\([^`]*\))?`", text):
+        return True
     if receiver is not None or not allow_bare:
         return False
     return re.search(rf"(?<![A-Za-z0-9_.]){re.escape(name)}\s*\(", text) is not None

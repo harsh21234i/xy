@@ -50,6 +50,7 @@ def test_public_api_manifest_catches_removed_component_factory() -> None:
 
     assert any("chrome_factories" in error and "tooltip" in error for error in errors)
 
+
 def test_fresh_import_budget_rejects_eager_modules(monkeypatch: pytest.MonkeyPatch) -> None:
     def fake_run(*args, **kwargs):
         del args, kwargs
@@ -382,6 +383,8 @@ def test_public_api_docs_require_receiver_qualified_chart_methods() -> None:
         "figure",
         receiver="chart",
     )
+    assert check_public_api._has_doc_reference("Use `xy(trace_id=0)` for one trace.", "xy")
+    assert check_public_api._has_doc_reference("Use `rows(limit=None)` for row data.", "rows")
     assert not check_public_api._has_doc_reference("unrelated figure() text", "figure")
     assert check_public_api._has_doc_reference(
         "unrelated figure() text",
@@ -394,7 +397,7 @@ def test_public_api_checker_rejects_missing_method_docs(tmp_path: Path) -> None:
     chart_doc = tmp_path / "figure-methods.md"
     selection_doc = tmp_path / "events-and-callbacks.md"
     chart_doc.write_text("documented chart.visible_method()\n", encoding="utf-8")
-    selection_doc.write_text("documented rows(limit=None) and len(selection)\n", encoding="utf-8")
+    selection_doc.write_text("documented `rows(limit=None)` and len(selection)\n", encoding="utf-8")
     inventory = check_public_api.PublicApiInventory(
         component_reexports=(),
         component_types=(),

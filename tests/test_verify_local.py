@@ -199,7 +199,7 @@ def test_ty_executable_falls_back_to_path(tmp_path: Path, monkeypatch) -> None:
     python.touch()
     monkeypatch.setattr(verify_local.shutil, "which", lambda _executable: "/path/ty")
 
-    assert verify_local._ty_tools.resolve_ty_executable(str(python)) == Path("/path/ty")
+    assert verify_local._ty_tools.resolve_ty_executable(str(python)) == Path("/path/ty").absolute()
 
 
 def test_ty_executable_skips_non_executable_sibling(tmp_path: Path, monkeypatch) -> None:
@@ -210,7 +210,7 @@ def test_ty_executable_skips_non_executable_sibling(tmp_path: Path, monkeypatch)
     monkeypatch.setattr(verify_local.os, "access", lambda _path, _mode: False)
     monkeypatch.setattr(verify_local.shutil, "which", lambda _executable: "/path/ty")
 
-    assert verify_local._ty_tools.resolve_ty_executable(str(python)) == Path("/path/ty")
+    assert verify_local._ty_tools.resolve_ty_executable(str(python)) == Path("/path/ty").absolute()
 
 
 @pytest.mark.parametrize(("os_name", "expected"), [("posix", "ty"), ("nt", "ty.exe")])
@@ -418,11 +418,14 @@ def test_missing_common_python_modules_name_specific_setup_commands(
     assert any("numpy anywidget" in reason for reason in reasons)
 
 
-def test_chromium_path_must_be_existing_executable_file(tmp_path: Path) -> None:
+def test_chromium_path_must_be_existing_executable_file(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch
+) -> None:
     directory = tmp_path / "Chrome.app"
     directory.mkdir()
     not_executable = tmp_path / "chrome"
     not_executable.write_text("#!/bin/sh\n", encoding="utf-8")
+    monkeypatch.setattr(verify_local.os, "access", lambda _path, _mode: False)
 
     for path, match in ((directory, "not a file"), (not_executable, "not executable")):
         check = verify_local.Check(
