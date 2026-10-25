@@ -44,7 +44,7 @@ jobs:
           node-version: "22"
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: "1.2.20"
+          bun-version: "1.2.21"
 
       - name: Verify audit inventory
         run: python3 scripts/verify_dependency_lock_inventory.py
@@ -56,7 +56,7 @@ jobs:
 
       - name: Audit documentation Python environment
         run: |
-          uv sync --project docs/app --frozen --group dev
+          uv sync --project docs/app --locked --group dev
           uv run --project docs/app --no-sync --with pip-audit pip-audit --progress-spinner off
 
       - name: Audit benchmark Python lock
@@ -65,7 +65,7 @@ jobs:
       - name: Audit Rust locks
         run: |
           cargo install cargo-audit --locked
-          cargo audit --locked
+          cargo audit
           cargo audit --file examples/osm/osmium-rs/Cargo.lock
 
       - name: Audit npm lock
