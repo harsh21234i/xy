@@ -6791,7 +6791,7 @@ class Axes(PlotTypeMixin):
             # Rendering recomputes this hint from the live chart size on every
             # build, so a locator's cached hint can be stale after resizing.
             count_key = "y" if key == "y2" else key
-            nbins_hint = host._auto_tick_counts(props, width, height)[count_key]
+            nbins_hint = host._auto_tick_counts(host._axis["x"], width, height)[count_key]
             host._apply_tickers(key, minor_props, nbins_hint)
             return np.asarray(
                 _scale_values(
