@@ -76,3 +76,20 @@ def test_minor_tick_getters_match_rendered_locations_at_figure_size(
 
         np.testing.assert_array_equal(x_minor, spec["x_axis"]["minor_tick_values"])
         np.testing.assert_array_equal(y_minor, spec["y_axis"]["minor_tick_values"])
+
+
+def test_minor_tick_getters_support_inset_freeform_and_twin_axes() -> None:
+    fig, ax = xyplt.subplots(figsize=(3.0, 2.0))
+    inset = ax.inset_axes((0.1, 0.1, 0.4, 0.4))
+    inset.plot([0.0, 1.0], [0.0, 1.0])
+    inset.minorticks_on()
+    assert inset.get_xticks(minor=True).size > 0
+
+    freeform = fig.add_axes((0.1, 0.1, 0.3, 0.3))
+    freeform.plot([0.0, 1.0], [0.0, 1.0])
+    freeform.minorticks_on()
+    assert freeform.get_yticks(minor=True).size > 0
+
+    twin = ax.twinx()
+    twin.minorticks_on()
+    assert twin.get_yticks(minor=True).size > 0

@@ -6763,18 +6763,35 @@ class Axes(PlotTypeMixin):
             # locations without requiring a render or mutating axis state.
             minor_props = dict(props)
             figure = host.figure
-            if host._plot_box_px is None and hasattr(figure, "_grid_cell_sizes"):
-                widths, heights = figure._grid_cell_sizes()
-                index = host._subplot_index
-                if index is None:
-                    index = figure._axes.index(host)
-                width = widths[index % figure._ncols]
-                height = heights[index // figure._ncols]
-            else:
-                width, height = rc_figsize_px(figure._figsize, figure._dpi)
+            canvas_width, canvas_height = rc_figsize_px(figure._figsize, figure._dpi)
+
+            def chart_size(axes: Axes) -> tuple[int, int]:
+                if axes._figure_rect is not None:
+                    return (
+                        max(1, round(canvas_width * axes._figure_rect[2])),
+                        max(1, round(canvas_height * axes._figure_rect[3])),
+                    )
+                if axes._subplot_index is not None and hasattr(figure, "_grid_cell_sizes"):
+                    widths, heights = figure._grid_cell_sizes()
+                    index = axes._subplot_index
+                    return widths[index % figure._ncols], heights[index // figure._ncols]
+                if axes in figure._axes:
+                    return canvas_width, canvas_height
+                for parent in figure._axes:
+                    for inset, (_left, _bottom, inset_width, inset_height) in parent._insets:
+                        if inset is axes:
+                            parent_width, parent_height = chart_size(parent)
+                            return (
+                                max(1, round(parent_width * inset_width)),
+                                max(1, round(parent_height * inset_height)),
+                            )
+                return canvas_width, canvas_height
+
+            width, height = chart_size(host)
             # Rendering recomputes this hint from the live chart size on every
             # build, so a locator's cached hint can be stale after resizing.
-            nbins_hint = host._auto_tick_counts(props, width, height)[key]
+            count_key = "y" if key == "y2" else key
+            nbins_hint = host._auto_tick_counts(props, width, height)[count_key]
             host._apply_tickers(key, minor_props, nbins_hint)
             return np.asarray(
                 _scale_values(
