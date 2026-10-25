@@ -654,10 +654,9 @@ def test_makefile_exposes_example_verification_shortcut() -> None:
 def test_makefile_exposes_docs_verification_shortcut() -> None:
     makefile = (ROOT / "Makefile").read_text(encoding="utf-8")
 
-    assert "check-docs:" in makefile
-    assert "scripts/verify_local.py --only examples" in makefile
+    assert "check-docs:\n\t$(PYTHON) scripts/verify_local.py --only docs" in makefile
     assert "make check-docs" in makefile
-    assert "run documentation examples" in makefile
+    assert "docs tests, quickstart, and quality hooks" in makefile
 
 
 def test_makefile_exposes_security_verification_shortcut() -> None:
