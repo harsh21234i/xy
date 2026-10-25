@@ -30,7 +30,6 @@ def test_minor_tick_setter_returns_current_minor_ticks_not_major_ticks() -> None
     ax.set_xlim(0.0, 10.0)
     ax.set_ylim(0.0, 10.0)
     ax.minorticks_on()
-    ax._build_chart(640, 480)
     major_x = ax.get_xticks().copy()
     major_y = ax.get_yticks().copy()
     minor_x = ax.get_xticks(minor=True).copy()
