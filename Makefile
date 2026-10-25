@@ -28,7 +28,7 @@ help:
 		'  make check-conformance run accessibility + Chromium/Firefox/WebKit conformance' \
 		'  make check-docs       run documentation examples' \
 		'  make check-examples   run canonical API examples and Reflex asset registry checks' \
-		'  make check-security   run export safety and dependency lock inventory checks' \
+		'  make check-security   run standalone HTML safety and dependency lock inventory checks' \
 		'  make check-errors     run public error, LOD, and mutation-safety tests' \
 		'  make check-api        run lazy public API and type-surface checks' \
 		'  make check-import     run import-time and dependency-boundary checks' \

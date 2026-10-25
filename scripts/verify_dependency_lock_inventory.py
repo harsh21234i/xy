@@ -19,6 +19,8 @@ EXPECTED_LOCKFILES = frozenset(
         "benchmarks/requirements-ci.lock",
     }
 )
+# These frozen launch baselines preserve historical dependency resolutions for
+# reproducibility; they are not active project environments audited by CI.
 EXCLUDED_PATH_PARTS = frozenset({"launch_baselines"})
 
 
@@ -29,7 +31,7 @@ def _is_lockfile(path: Path) -> bool:
 
 
 def find_dependency_lockfiles(root: Path = ROOT) -> frozenset[str]:
-    """Return committed dependency lockfiles, excluding local generated files."""
+    """Return committed project lockfiles, excluding frozen launch baselines."""
     try:
         result = subprocess.run(
             ["git", "-C", str(root), "ls-files", "-z"],
