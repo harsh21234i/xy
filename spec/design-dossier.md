@@ -1219,10 +1219,11 @@ hits a source build requiring a Rust toolchain — an instant adoption cliff.
    (x86_64), macOS (arm64), Windows x86_64. A missing native wheel
    is a release failure, not an end-user surprise.
    This is the published prebuilt-wheel set, not a claim that the Rust core
-   cannot compile elsewhere. Users on other operating systems or architectures
-   need a local Rust toolchain until those targets gain a matching install and
-   kernel smoke gate; expanding the published set requires the release matrix,
-   artifact contract, and platform documentation to change together.
+   cannot compile elsewhere. The release matrix no longer publishes Linux glibc
+   aarch64/armv7, musllinux, macOS x86-64, or Windows x86/arm64 wheels. Users on
+   those platforms need a local Rust toolchain until matching install and kernel
+   smoke gates are added. Expanding the published set requires the release
+   matrix, artifact contract, and platform documentation to change together.
 2. **The JS/WebGL2 render client as bundled static assets** inside the same wheel —
    versioned, no CDN dependency (notebooks are often airgapped; §23's CSP rules
    apply). The bundles (`python/xy/static/*.js`) are a **generated artifact, not
