@@ -106,12 +106,24 @@ _WHEEL_TARGETS = {
     "win32": ("PE", "x86", 32),
     "win_arm64": ("PE", "aarch64", 64),
 }
-_ELF_ALLOWED_GLIBC = {"libc.so.6", "libm.so.6", "libgcc_s.so.1", "ld-linux-x86-64.so.2"}
+_ELF_ALLOWED_GLIBC = {
+    "libc.so.6",
+    "libm.so.6",
+    "libgcc_s.so.1",
+    "libpthread.so.0",
+    "libdl.so.2",
+    "librt.so.1",
+    "libutil.so.1",
+    "ld-linux-x86-64.so.2",
+    "ld-linux-aarch64.so.1",
+    "ld-linux-armhf.so.3",
+}
 _ELF_ALLOWED_MUSL_PREFIXES = ("libc.musl-", "ld-musl-", "libgcc_s.so.")
+_PE_ALLOWED_IMPORT_PREFIXES = ("api-ms-win-core-", "api-ms-win-crt-")
 _PE_ALLOWED_IMPORTS = {
-    "api-ms-win-core",
-    "api-ms-win-crt",
+    "bcryptprimitives.dll",
     "kernel32.dll",
+    "ntdll.dll",
     "msvcrt.dll",
     "ucrtbase.dll",
     "vcruntime140.dll",
@@ -606,7 +618,10 @@ def _require_pe_linkage(name: str, data: bytes) -> None:
     unexpected = sorted(
         dependency
         for dependency in imports
-        if not any(dependency.casefold().startswith(prefix) for prefix in _PE_ALLOWED_IMPORTS)
+        if dependency.casefold() not in _PE_ALLOWED_IMPORTS
+        and not any(
+            dependency.casefold().startswith(prefix) for prefix in _PE_ALLOWED_IMPORT_PREFIXES
+        )
     )
     if unexpected:
         raise AssertionError(f"{name} has unsupported Windows imports: {unexpected}")
@@ -691,6 +706,13 @@ def _require_filename_tag(path: Path, tags: list[str]) -> None:
     if filename_tag not in tags:
         raise AssertionError(
             f"wheel filename tag {filename_tag!r} is not listed in WHEEL tags {tags}"
+        )
+
+
+def _require_expected_platform_tag(platform: str, tags: list[str]) -> None:
+    if not any(tag.rsplit("-", 1)[-1] == platform for tag in tags):
+        raise AssertionError(
+            f"expected platform {platform!r} is not advertised in WHEEL tags {tags}"
         )
 
 
@@ -831,15 +853,15 @@ def verify_wheel(
     require_linkage: bool = False,
 ) -> None:
     if require_linkage and (expect_native is not True or expect_platform is None):
-        raise AssertionError(
-            "linkage validation requires an expected native wheel platform tag"
-        )
+        raise AssertionError("linkage validation requires an expected native wheel platform tag")
     with zipfile.ZipFile(path) as zf:
         _require_unique_archive_members(zf.infolist())
         names = set(zf.namelist())
         _require_only_shippable_roots(names)
         wheel = _parse_wheel(names, zf.read(_dist_info_name(names, "WHEEL")))
         _require_filename_tag(path, wheel.tags)
+        if expect_platform is not None:
+            _require_expected_platform_tag(expect_platform, wheel.tags)
         expected_version = _filename_version(path)
         _require_dist_info_version(names, expected_version)
         _require_metadata(names, zf.read(_dist_info_name(names, "METADATA")), expected_version)

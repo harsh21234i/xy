@@ -30,22 +30,19 @@ python -c "import xy; print(xy.__version__)"
 
 ## Supported platforms
 
-XY supports the platforms below. The PyPI column describes only the files in
-the current 0.0.1 upload, not whether XY supports the platform.
+Prebuilt native wheels are published only for targets that the release
+workflow can install, load, and exercise on a matching hosted runner.
 
-| Platform | Compatibility | Architectures | XY support | PyPI 0.0.1 wheel |
-| --- | --- | --- | --- | --- |
-| macOS | macOS 10.12+ on Intel; macOS 11+ on Apple silicon | `x86_64`, `arm64` | Supported | Included |
-| Linux | glibc (`manylinux_2_17`) | `x86_64`, `aarch64`, `armv7l` | Supported | Included |
-| Linux | musl (`musllinux_1_2`, including Alpine) | `x86_64`, `aarch64`, `armv7l` | Supported | Included |
-| Windows | Native Windows | `x86_64`, `x86`, `arm64` | Supported | Not included |
-| WebAssembly | Pyodide 314 (Emscripten, PEP 783) | `wasm32` | Supported | Not in 0.0.1 (on PyPI since 0.0.3) |
+| Platform | Compatibility | Architecture | Native wheel |
+| --- | --- | --- | --- |
+| Linux | glibc (`manylinux_2_17`) | `x86_64` | Included; runtime verified |
+| macOS | macOS 11+ on Apple silicon | `arm64` | Included; runtime verified |
+| Windows | Native Windows | `x86_64` | Included; runtime verified |
+| WebAssembly | Pyodide 314 (Emscripten, PEP 783) | `wasm32` | Included; runtime verified |
 
-Windows is supported by XY's native core and release pipeline. The current
-0.0.1 PyPI upload does not include Windows wheels or a source distribution, so
-`uv add xy` and `python -m pip install xy` cannot install it directly on
-Windows yet. Until a Windows wheel is published, install the tagged source
-with a Rust MSVC toolchain as described below.
+Other architectures and operating systems may be buildable from source with a
+compatible Rust toolchain, but are not part of the published wheel matrix until
+the release workflow can run an install and native-kernel smoke test for them.
 
 The runtime-verified WebAssembly wheel targets the standardized PEP 783
 `pyemscripten_2026_0_wasm32` platform and, as of 0.0.3, is published to PyPI
@@ -90,35 +87,41 @@ Rust tooling beyond the commands above.
 
 ## Optional tools and integrations
 
-- Install `pyarrow` separately when you want Arrow-backed input:
+### Arrow input
 
-  ~~~bash
-  uv add pyarrow
-  ~~~
+Install `pyarrow` separately when you want Arrow-backed input:
 
-- The bundled Reflex integration supports state-backed application charts and
-  remains experimental. Install the extra to select a compatible Reflex
-  version. With uv:
+~~~bash
+uv add pyarrow
+~~~
 
-  ~~~bash
-  uv add "xy[reflex]"
-  ~~~
+### Reflex integration
 
-  Or with pip:
+The bundled Reflex integration supports state-backed application charts and
+remains experimental. Install the extra to select a compatible Reflex
+version. With uv:
 
-  ~~~bash
-  python -m pip install "xy[reflex]"
-  ~~~
+~~~bash
+uv add "xy[reflex]"
+~~~
 
-  The `xy` wheel already carries the `reflex_xy` integration; the extra adds
-  only the supported Reflex dependency floor. Pin resolved versions for
-  production deployments. Continue with the
-  [Reflex integration guide](/docs/xy/integrations/reflex/) for its current
-  limitations and setup.
+Or with pip:
 
-- Native PNG is the default static raster path and does not launch a browser.
-  Chromium-based PNG export is optional and discovers Chrome, Chromium, Edge,
-  or `chrome-headless-shell` on the machine; set `XY_BROWSER` to an executable
-  path when automatic discovery is not appropriate.
+~~~bash
+python -m pip install "xy[reflex]"
+~~~
+
+The `xy` wheel already carries the `reflex_xy` integration; the extra adds
+only the supported Reflex dependency floor. Pin resolved versions for
+production deployments. Continue with the
+[Reflex integration guide](/docs/xy/integrations/reflex/) for its current
+limitations and setup.
+
+### Optional browser export
+
+Native PNG is the default static raster path and does not launch a browser.
+Chromium-based PNG export is optional and discovers Chrome, Chromium, Edge,
+or `chrome-headless-shell` on the machine; set `XY_BROWSER` to an executable
+path when automatic discovery is not appropriate.
 
 Next, build [your first chart](/docs/xy/overview/first-chart/).
