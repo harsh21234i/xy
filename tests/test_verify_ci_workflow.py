@@ -127,6 +127,35 @@ def test_reflex_compatibility_gate_rejects_inactive_shell_commands(tmp_path: Pat
         assert any("component compile and event smoke" in error for error in errors)
 
 
+def test_reflex_compatibility_gate_requires_state_rebuild_smoke(tmp_path: Path) -> None:
+    workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
+    step = "      - name: State event and rebuild smoke\n"
+    path = tmp_path / "ci-missing-state-smoke.yml"
+    path.write_text(
+        workflow.replace(step, "      - name: Unrelated state check\n"), encoding="utf-8"
+    )
+
+    errors = verify_ci_workflow.validate_ci_workflow(path)
+
+    assert any("State event and rebuild smoke" in error for error in errors)
+
+
+def test_reflex_compatibility_gate_rejects_inactive_state_rebuild_command(
+    tmp_path: Path,
+) -> None:
+    workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
+    command = ".venv/bin/pytest -q tests/reflex_adapter/test_state_bridge.py::test_rebuild_reads_session_state"
+    path = tmp_path / "ci-inactive-state-smoke.yml"
+    path.write_text(
+        workflow.replace(f"        run: {command}", f'        run: echo "{command}"'),
+        encoding="utf-8",
+    )
+
+    errors = verify_ci_workflow.validate_ci_workflow(path)
+
+    assert any("state event and rebuild smoke" in error for error in errors)
+
+
 def test_reflex_compatibility_gate_rejects_excluded_versions(tmp_path: Path) -> None:
     workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
     workflow = workflow.replace(
@@ -177,6 +206,19 @@ def test_reflex_extra_check_reads_the_optional_dependency_table(
     errors = verify_ci_workflow.validate_ci_workflow(path)
 
     assert any("pyproject.toml must bound" in error for error in errors)
+
+
+def test_reflex_extra_check_reports_malformed_project_toml(tmp_path: Path, monkeypatch) -> None:
+    workflow = Path(".github/workflows/ci.yml").read_text(encoding="utf-8")
+    workflow_path = tmp_path / "ci.yml"
+    workflow_path.write_text(workflow, encoding="utf-8")
+    (tmp_path / "pyproject.toml").write_text("[project\n", encoding="utf-8")
+    monkeypatch.setattr(verify_ci_workflow, "ROOT", tmp_path)
+
+    errors = verify_ci_workflow.validate_ci_workflow(workflow_path)
+
+    assert any("cannot parse pyproject.toml" in error for error in errors)
+    assert not any("pyproject.toml must bound" in error for error in errors)
 
 
 def test_locked_reflex_environment_must_be_in_named_install_step(tmp_path: Path) -> None:

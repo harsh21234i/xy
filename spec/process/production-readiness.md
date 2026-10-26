@@ -668,11 +668,11 @@ Before merging a release pull request:
 Every `xy` release carries the `reflex_xy` Python package and JSX wrapper. The
 wrapper links to the render client in the same installed distribution, so
 client, kernel, and framework bridge share one version. Plain `xy` must not
-install Reflex; `xy[reflex]` selects the tested range `>=0.9.6,<=0.10.0`.
-CI runs the component compile and state-event rebuild smokes against the minimum
-`0.9.6`, newest `0.9.x` release `0.9.13`, and `0.10.0`. The upper bound is the
-newest release covered by both smokes; raise it only after adding the new
-release to that matrix and passing both smokes. Release smoke tests
+install Reflex; `xy[reflex]` declares the compatibility bound
+`>=0.9.6,<=0.10.0`. CI samples it with component compile and state-event rebuild
+smokes on the minimum `0.9.6`, newest `0.9.x` release `0.9.13`, and `0.10.0`.
+The upper limit is the newest release covered by both smokes; raise it only
+after adding the new release to the matrix and passing both smokes. Release smoke tests
 install the bounded extra, import `reflex_xy`, and assert that its reported
 version matches the `xy` distribution version.
 

@@ -26,6 +26,7 @@ ROOT = Path(__file__).resolve().parents[1]
 DEFAULT_CI_WORKFLOW = ROOT / ".github" / "workflows" / "ci.yml"
 DEFAULT_CODSPEED_WORKFLOW = ROOT / ".github" / "workflows" / "codspeed.yml"
 DEFAULT_WORKFLOW = DEFAULT_CI_WORKFLOW
+REFLEX_COMPATIBILITY_JOB = "reflex_compatibility"
 REQUIRED_CI_JOBS = {
     "browser_conformance",
     "matplotlib_reference",
@@ -37,7 +38,7 @@ REQUIRED_CI_JOBS = {
     "sdist",
     "wheels",
     "install_without_rust",
-    "reflex_compatibility",
+    REFLEX_COMPATIBILITY_JOB,
 }
 REQUIRED_CODSPEED_JOBS = {"benchmarks"}
 REFLEX_OPTIONAL_DEPENDENCY = "reflex>=0.9.6,<=0.10.0"
@@ -856,13 +857,13 @@ def validate_ci_workflow(path: Path = DEFAULT_CI_WORKFLOW) -> list[str]:
     _require_job_contains(
         errors,
         jobs,
-        "reflex_compatibility",
+        REFLEX_COMPATIBILITY_JOB,
         "CI",
         "minimum and maximum supported Reflex compatibility matrix",
         "fail-fast: false",
         'reflex-version: ["0.9.6", "0.9.13", "0.10.0"]',
     )
-    reflex_job = jobs.get("reflex_compatibility", "")
+    reflex_job = jobs.get(REFLEX_COMPATIBILITY_JOB, "")
     matrix_values, matrix_unsafe = _direct_yaml_key_values(reflex_job, "reflex-version", indent=8)
     if matrix_values != ['["0.9.6", "0.9.13", "0.10.0"]'] or matrix_unsafe:
         errors.append(
@@ -913,14 +914,18 @@ def validate_ci_workflow(path: Path = DEFAULT_CI_WORKFLOW) -> list[str]:
     else:
         try:
             project = tomllib.loads(project_metadata).get("project", {})
-            optional_dependencies = project.get("optional-dependencies", {})
-            reflex_dependencies = optional_dependencies.get("reflex")
-        except (tomllib.TOMLDecodeError, AttributeError):
-            reflex_dependencies = None
-        if reflex_dependencies != [REFLEX_OPTIONAL_DEPENDENCY]:
-            errors.append(
-                f"pyproject.toml must bound the xy[reflex] extra to {REFLEX_OPTIONAL_DEPENDENCY!r}"
-            )
+        except tomllib.TOMLDecodeError as exc:
+            errors.append(f"cannot parse pyproject.toml for Reflex compatibility gate: {exc}")
+        else:
+            try:
+                optional_dependencies = project.get("optional-dependencies", {})
+                reflex_dependencies = optional_dependencies.get("reflex")
+            except AttributeError:
+                reflex_dependencies = None
+            if reflex_dependencies != [REFLEX_OPTIONAL_DEPENDENCY]:
+                errors.append(
+                    f"pyproject.toml must bound the xy[reflex] extra to {REFLEX_OPTIONAL_DEPENDENCY!r}"
+                )
     _require_job_contains(
         errors,
         jobs,

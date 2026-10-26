@@ -115,7 +115,8 @@ python -m pip install "xy[reflex]"
 ~~~
 
 The `xy` wheel already carries the `reflex_xy` integration; the extra selects
-the tested Reflex range. CI covers 0.9.6, 0.9.13, and 0.10.0. Continue with the
+the supported Reflex bound. CI smoke coverage includes 0.9.6, 0.9.13, and
+0.10.0. Continue with the
 [Reflex integration guide](/docs/xy/integrations/reflex/) for its current
 limitations and setup.
 
