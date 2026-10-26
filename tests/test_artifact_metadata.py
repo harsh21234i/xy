@@ -9,7 +9,9 @@ def _metadata(reflex_requirement: str) -> object:
             [
                 "Requires-Dist: anywidget>=0.9",
                 "Requires-Dist: numpy>=1.24",
+                'Requires-Dist: matplotlib>=3.11,<3.12; extra == "matplotlib"',
                 f"Requires-Dist: {reflex_requirement}",
+                "Provides-Extra: matplotlib",
                 "Provides-Extra: reflex",
                 "",
             ]
