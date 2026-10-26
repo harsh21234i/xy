@@ -196,6 +196,26 @@ def test_expect_artifacts_matches_what_the_build_workflow_produces() -> None:
     assert "*.tar.gz" in entry["expect-artifacts"]
 
 
+def test_every_native_wheel_target_runs_the_install_smoke() -> None:
+    entry = RELEASE_CONFIG["custom-build"][0]
+    build = (ROOT / ".github" / "workflows" / entry["workflow"]).read_text(encoding="utf-8")
+    wheel_entries = [
+        line for line in build.splitlines() if line.lstrip().startswith("- {") and "plat:" in line
+    ]
+
+    assert wheel_entries, "the native wheel matrix must not be empty"
+    assert all(re.search(r"\bnative: true\b", line) for line in wheel_entries), wheel_entries
+
+    smoke = re.search(
+        r"(?ms)^      - name: Verify the wheel installs and loads the native core\n"
+        r"(?P<step>.*?)(?=^      - |\n  wasm:)",
+        build,
+    )
+    assert smoke is not None, "the native wheel matrix requires an install smoke step"
+    assert re.search(r"^        if: matrix\.native$", smoke["step"], re.MULTILINE)
+    assert re.search(r'^          "\$py" scripts/wheel_smoke\.py$', smoke["step"], re.MULTILINE)
+
+
 def test_post_release_workflow_declares_the_dispatch_contract() -> None:
     # The release pipeline dispatches this workflow with `tag`, `package` and
     # `version` once a tag is published. reflex-release checks only that the name
