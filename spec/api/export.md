@@ -199,9 +199,11 @@ CI or container environments that cannot launch a sandboxed browser. The
 security rationale and historical audit are recorded in
 [XY-SEC-2026-03](../process/security-audit-2026-07-06.md#status-as-of-2026-07-20-xy-sec-2026-03).
 The standalone PNG export smoke uses `sandbox=False` only with HTML generated
-from controlled fixtures. The Reflex websocket smoke keeps the browser sandbox
-enabled by default; its `--no-sandbox` option is an explicit opt-out for a
-trusted frontend URL. Application exports keep the sandboxed default.
+from controlled fixtures. The workflow benchmark likewise opts out only for
+the repository-generated chart it measures. The Reflex websocket smoke keeps
+the browser sandbox enabled by default; its `--no-sandbox` option is an
+explicit opt-out for a trusted frontend URL. Application exports keep the
+sandboxed default.
 
 ## 8. Batch export
 

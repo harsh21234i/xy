@@ -346,7 +346,13 @@ def _export_rows(n: int, reps: int, chromium: str | None) -> list[dict[str, Any]
                     family="export",
                     n=n,
                     setup=figure,
-                    operation=lambda fig: fig.to_png(engine=xy.Engine.chromium),
+                    # The benchmark renders only the controlled figure above.
+                    # GitHub-hosted runners cannot initialize Chromium's sandbox,
+                    # so this repository-owned harness opts out explicitly.
+                    operation=lambda fig: fig.to_png(
+                        engine=xy.Engine.chromium,
+                        sandbox=False,
+                    ),
                     reps=1,
                     category_ids=("static_export", "payload_export_size"),
                     scope="public-chromium-png-export",

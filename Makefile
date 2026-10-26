@@ -14,7 +14,7 @@ NAME ?=
 RELEASE_VERSION ?= 0.1.0a4
 RELEASE_CLI = uvx reflex-release@$(RELEASE_VERSION)
 
-.PHONY: help setup setup-browser check check-full check-browser check-conformance check-docs check-examples check-security check-errors check-api check-import check-ci check-benchmark-harness check-pyplot check-pyplot-speed check-sdist check-wheel check-artifacts check-benchmark-report list-checks test lint format typecheck public-api python-floor js-check rust-check abi-smoke news news-check
+.PHONY: help setup setup-browser check check-full check-browser check-conformance check-docs check-examples check-security check-security-static check-dependency-audit check-errors check-api check-import check-ci check-benchmark-harness check-pyplot check-pyplot-speed check-sdist check-wheel check-artifacts check-benchmark-report list-checks test lint format typecheck public-api python-floor js-check rust-check abi-smoke news news-check
 
 help:
 	@printf '%s\n' \
@@ -28,7 +28,8 @@ help:
 		'  make check-conformance run accessibility + Chromium/Firefox/WebKit conformance' \
 		'  make check-docs       run documentation examples' \
 		'  make check-examples   run canonical API examples and Reflex asset registry checks' \
-		'  make check-security   run standalone HTML safety and dependency lock inventory checks' \
+		'  make check-security   run standalone HTML safety plus all dependency-advisory audits' \
+		'  make check-dependency-audit audit every active committed dependency lock' \
 		'  make check-errors     run public error, LOD, and mutation-safety tests' \
 		'  make check-api        run lazy public API and type-surface checks' \
 		'  make check-import     run import-time and dependency-boundary checks' \
@@ -91,8 +92,13 @@ check-examples:
 check-pyplot:
 	$(PYTHON) -m pytest tests/pyplot -q
 
-check-security:
-	$(PYTHON) scripts/verify_local.py --only security_export,dependency_lock_inventory
+check-security: check-security-static check-dependency-audit
+
+check-security-static:
+	$(PYTHON) scripts/verify_local.py --only security_export
+
+check-dependency-audit:
+	$(PYTHON) scripts/audit_dependencies.py
 
 check-errors:
 	$(PYTHON) scripts/verify_local.py --only error_safety

@@ -8,7 +8,7 @@ import sys
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
-EXPECTED_LOCKFILES = frozenset(
+AUDITED_LOCKFILES = frozenset(
     {
         "Cargo.lock",
         "examples/osm/osmium-rs/Cargo.lock",
@@ -19,19 +19,51 @@ EXPECTED_LOCKFILES = frozenset(
         "benchmarks/requirements-ci.lock",
     }
 )
-# These frozen launch baselines preserve historical dependency resolutions for
-# reproducibility; they are not active project environments audited by CI.
-EXCLUDED_PATH_PARTS = frozenset({"launch_baselines"})
+FROZEN_EVIDENCE_LOCKFILES = frozenset(
+    {
+        "benchmarks/launch_baselines/xy-0.1.0/macos-arm64-m5-pro/uv.lock",
+        "benchmarks/launch_baselines/xy-main-2026-07-26/macos-arm64-m5-pro/uv.lock",
+    }
+)
+EXPECTED_LOCKFILES = AUDITED_LOCKFILES | FROZEN_EVIDENCE_LOCKFILES
+
+LOCKFILE_NAMES = frozenset(
+    {
+        "bun.lock",
+        "bun.lockb",
+        "cargo.lock",
+        "composer.lock",
+        "flake.lock",
+        "gemfile.lock",
+        "go.sum",
+        "gradle.lockfile",
+        "npm-shrinkwrap.json",
+        "package-lock.json",
+        "package.resolved",
+        "packages.lock.json",
+        "pdm.lock",
+        "pipfile.lock",
+        "pixi.lock",
+        "pnpm-lock.yaml",
+        "podfile.lock",
+        "poetry.lock",
+        "uv.lock",
+        "yarn.lock",
+    }
+)
 
 
 def _is_lockfile(path: Path) -> bool:
-    return path.name in {"Cargo.lock", "package-lock.json", "bun.lock", "uv.lock"} or (
-        path.name.startswith("requirements") and path.name.endswith(".lock")
+    name = path.name.lower()
+    return (
+        name in LOCKFILE_NAMES
+        or (name.startswith("requirements") and name.endswith(".lock"))
+        or (name.startswith("pylock") and name.endswith(".toml"))
     )
 
 
 def find_dependency_lockfiles(root: Path = ROOT) -> frozenset[str]:
-    """Return committed project lockfiles, excluding frozen launch baselines."""
+    """Return recognized dependency lockfiles committed to the checkout."""
     try:
         result = subprocess.run(
             ["git", "-C", str(root), "ls-files", "-z"],
@@ -45,7 +77,6 @@ def find_dependency_lockfiles(root: Path = ROOT) -> frozenset[str]:
         for raw_path in result.stdout.split(b"\0")
         if raw_path
         for path in (raw_path.decode("utf-8", "surrogateescape"),)
-        if not any(part in EXCLUDED_PATH_PARTS for part in Path(path).parts)
         if _is_lockfile(Path(path))
     )
 
@@ -67,7 +98,11 @@ def main() -> int:
                 file=sys.stderr,
             )
         return 1
-    print(f"dependency lockfile inventory OK ({len(actual)} files)")
+    print(
+        "dependency lockfile inventory OK "
+        f"({len(AUDITED_LOCKFILES)} audited, "
+        f"{len(FROZEN_EVIDENCE_LOCKFILES)} frozen evidence)"
+    )
     return 0
 
 

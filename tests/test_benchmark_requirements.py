@@ -20,3 +20,10 @@ def test_benchmark_lock_contains_every_direct_pin() -> None:
 
     assert direct
     assert {name: locked.get(name) for name in direct} == direct
+
+
+def test_workflow_benchmark_explicitly_trusts_its_generated_chromium_html() -> None:
+    source = Path("benchmarks/bench_workflows.py").read_text(encoding="utf-8")
+
+    assert "engine=xy.Engine.chromium," in source
+    assert "sandbox=False," in source

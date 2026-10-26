@@ -34,4 +34,9 @@ metadata is rejected.
   A sandboxed launch failure fails closed and is never retried unsandboxed.
 - The native core is a local in-process C-ABI library; it processes only data
   already in the caller's process and performs no I/O or network access.
+- Active committed dependency locks are scanned on relevant pull requests and
+  weekly. Python and Rust fail on every advisory; npm and Bun fail on high or
+  critical advisories. No ignores are currently allowed. Run
+  `make check-dependency-audit` locally; the scope and frozen-evidence exception
+  are documented in the audit trail.
 - The audit trail lives in `spec/process/security-audit-2026-07-06.md`.

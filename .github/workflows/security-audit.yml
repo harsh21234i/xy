@@ -8,8 +8,25 @@ on:
       - "**/Cargo.lock"
       - "**/package-lock.json"
       - "**/bun.lock"
+      - "**/bun.lockb"
       - "**/uv.lock"
       - "**/requirements*.lock"
+      - "**/Pipfile.lock"
+      - "**/poetry.lock"
+      - "**/pdm.lock"
+      - "**/pixi.lock"
+      - "**/pylock*.toml"
+      - "**/yarn.lock"
+      - "**/pnpm-lock.yaml"
+      - "**/npm-shrinkwrap.json"
+      - "**/go.sum"
+      - "**/Gemfile.lock"
+      - "**/composer.lock"
+      - "**/Package.resolved"
+      - "**/Podfile.lock"
+      - "**/packages.lock.json"
+      - "**/flake.lock"
+      - "**/gradle.lockfile"
       - "pyproject.toml"
       - "Cargo.toml"
       - "**/Cargo.toml"
@@ -17,8 +34,11 @@ on:
       - "**/package.json"
       - "docs/app/pyproject.toml"
       - "docs/app/reflex.lock/package.json"
+      - "benchmarks/requirements*.in"
       - "benchmarks/requirements*.txt"
       - "scripts/verify_dependency_lock_inventory.py"
+      - "scripts/audit_dependencies.py"
+      - "Makefile"
   schedule:
     - cron: "17 3 * * 1"
   workflow_dispatch:
@@ -45,35 +65,10 @@ jobs:
           node-version: "22"
       - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2.2.0
         with:
-          bun-version: "1.2.21"
+          bun-version: "1.4.2"
 
-      - name: Verify audit inventory
-        run: python3 scripts/verify_dependency_lock_inventory.py
+      - name: Install Rust advisory scanner
+        run: cargo install cargo-audit --locked
 
-      - name: Audit root Python environment
-        run: |
-          uv sync --locked --all-extras --all-groups
-          uv run --with pip-audit pip-audit --progress-spinner off
-
-      - name: Audit documentation Python environment
-        run: |
-          uv sync --project docs/app --locked --group dev
-          uv run --project docs/app --no-sync --with pip-audit pip-audit --progress-spinner off
-
-      - name: Audit benchmark Python lock
-        run: uvx --from pip-audit pip-audit -r benchmarks/requirements-ci.lock --progress-spinner off
-
-      - name: Audit Rust locks
-        run: |
-          cargo install cargo-audit --locked
-          cargo audit
-          cargo audit --file examples/osm/osmium-rs/Cargo.lock
-
-      - name: Audit npm lock
-        run: npm audit --package-lock-only --audit-level=high
-
-      - name: Audit Bun lock
-        run: |
-          cd docs/app/reflex.lock
-          bun install --frozen-lockfile
-          bun audit --audit-level=high
+      - name: Audit active dependency locks
+        run: make check-dependency-audit
