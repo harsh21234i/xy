@@ -201,10 +201,11 @@ security rationale and historical audit are recorded in
 Repository-owned raster callers use the opt-out only for controlled inputs:
 the standalone PNG smoke renders fixture-generated HTML, the full-path export
 test and workflow benchmark render constructed figures, and the dashboard PNG
-option renders the repository's synthetic example data. The Reflex websocket
-smoke keeps the browser sandbox enabled by default; its `--no-sandbox` option
-is an explicit opt-out for a trusted frontend URL. Application exports keep
-the sandboxed default.
+option renders the repository's synthetic example data. The non-NumPy render
+smoke uses its checked-in page; visual-regression and lifecycle smokes use the
+repository's local FastAPI fixture. The Reflex websocket smoke keeps the browser
+sandbox enabled by default; its `--no-sandbox` option is an explicit opt-out
+for a trusted frontend URL. Application exports keep the sandboxed default.
 
 ## 8. Batch export
 

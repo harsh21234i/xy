@@ -15,15 +15,6 @@ except ModuleNotFoundError:
     from verify_dependency_lock_inventory import AUDITED_LOCKFILES
 
 ROOT = Path(__file__).resolve().parents[1]
-AUDIT_HANDLERS = {
-    "Cargo.lock": "cargo audit",
-    "examples/osm/osmium-rs/Cargo.lock": "cargo audit --file",
-    "package-lock.json": "npm audit",
-    "uv.lock": "pip-audit --locked (exported pylock)",
-    "docs/app/uv.lock": "pip-audit --locked (exported pylock)",
-    "docs/app/reflex.lock/bun.lock": "bun audit",
-    "benchmarks/requirements-ci.lock": "pip-audit -r",
-}
 
 
 def _run(label: str, command: tuple[str, ...], *, cwd: Path = ROOT) -> None:
@@ -43,8 +34,9 @@ def _require_tools() -> None:
 
 
 def _verify_audit_coverage() -> None:
-    missing = sorted(AUDITED_LOCKFILES - AUDIT_HANDLERS.keys())
-    untracked = sorted(AUDIT_HANDLERS.keys() - AUDITED_LOCKFILES)
+    implemented = set(AUDIT_HANDLERS)
+    missing = sorted(AUDITED_LOCKFILES - implemented)
+    untracked = sorted(implemented - AUDITED_LOCKFILES)
     if missing or untracked:
         raise RuntimeError(
             "dependency audit handlers do not match the lock inventory: "
@@ -92,6 +84,54 @@ def _audit_uv_project(label: str, project: str) -> None:
         )
 
 
+def _audit_benchmark_python_lock() -> None:
+    _run(
+        "audit benchmark Python lock",
+        (
+            "uvx",
+            "--from",
+            "pip-audit",
+            "pip-audit",
+            "-r",
+            "benchmarks/requirements-ci.lock",
+            "--progress-spinner",
+            "off",
+        ),
+    )
+
+
+def _audit_root_rust_lock() -> None:
+    _run("audit root Rust lock", ("cargo", "audit"))
+
+
+def _audit_osmium_rust_lock() -> None:
+    _run(
+        "audit osmium example Rust lock",
+        ("cargo", "audit", "--file", "examples/osm/osmium-rs/Cargo.lock"),
+    )
+
+
+def _audit_npm_lock() -> None:
+    _run("audit npm lock", ("npm", "audit", "--package-lock-only", "--audit-level=high"))
+
+
+def _audit_bun_lock() -> None:
+    bun_dir = ROOT / "docs" / "app" / "reflex.lock"
+    _run("install frozen Bun lock", ("bun", "install", "--frozen-lockfile"), cwd=bun_dir)
+    _run("audit Bun lock", ("bun", "audit", "--audit-level=high"), cwd=bun_dir)
+
+
+AUDIT_HANDLERS = {
+    "uv.lock": lambda: _audit_uv_project("root", "."),
+    "docs/app/uv.lock": lambda: _audit_uv_project("documentation", "docs/app"),
+    "benchmarks/requirements-ci.lock": _audit_benchmark_python_lock,
+    "Cargo.lock": _audit_root_rust_lock,
+    "examples/osm/osmium-rs/Cargo.lock": _audit_osmium_rust_lock,
+    "package-lock.json": _audit_npm_lock,
+    "docs/app/reflex.lock/bun.lock": _audit_bun_lock,
+}
+
+
 def main() -> int:
     try:
         _verify_audit_coverage()
@@ -100,33 +140,8 @@ def main() -> int:
             "verify dependency lock inventory",
             (sys.executable, "scripts/verify_dependency_lock_inventory.py"),
         )
-        _audit_uv_project("root", ".")
-        _audit_uv_project("documentation", "docs/app")
-        _run(
-            "audit benchmark Python lock",
-            (
-                "uvx",
-                "--from",
-                "pip-audit",
-                "pip-audit",
-                "-r",
-                "benchmarks/requirements-ci.lock",
-                "--progress-spinner",
-                "off",
-            ),
-        )
-        _run("audit root Rust lock", ("cargo", "audit"))
-        _run(
-            "audit osmium example Rust lock",
-            ("cargo", "audit", "--file", "examples/osm/osmium-rs/Cargo.lock"),
-        )
-        _run(
-            "audit npm lock",
-            ("npm", "audit", "--package-lock-only", "--audit-level=high"),
-        )
-        bun_dir = ROOT / "docs" / "app" / "reflex.lock"
-        _run("install frozen Bun lock", ("bun", "install", "--frozen-lockfile"), cwd=bun_dir)
-        _run("audit Bun lock", ("bun", "audit", "--audit-level=high"), cwd=bun_dir)
+        for audit_handler in AUDIT_HANDLERS.values():
+            audit_handler()
     except (OSError, RuntimeError, subprocess.CalledProcessError) as exc:
         print(f"dependency audit failed: {exc}", file=sys.stderr)
         return 1
