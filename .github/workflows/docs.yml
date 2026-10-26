@@ -65,7 +65,8 @@ jobs:
         with:
           node-version: "22"
       - name: Run the local docs quality gate
-        run: uv run python scripts/verify_docs_local.py
+        shell: bash
+        run: uv run --no-project python scripts/verify_docs_local.py
 
   production:
     name: Production docs (Python ${{ matrix.python-version }})

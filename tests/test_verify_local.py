@@ -74,7 +74,10 @@ def test_docs_ci_runs_the_local_quality_gate() -> None:
     root = Path(__file__).resolve().parents[1]
     workflow = (root / ".github/workflows/docs.yml").read_text(encoding="utf-8")
 
-    assert "uv run python scripts/verify_docs_local.py" in workflow
+    assert (
+        "shell: bash\n        run: uv run --no-project python scripts/verify_docs_local.py"
+        in workflow
+    )
     assert workflow.count('"scripts/verify_docs_local.py"') == 2
     assert workflow.count('"scripts/check_public_api.py"') == 2
 

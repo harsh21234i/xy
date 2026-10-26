@@ -22,7 +22,7 @@ make check
 
 `make setup` installs the editable development package and builds the required
 native core. Source development needs Python 3.11+, a Rust toolchain for that
-core, and Node 18+ for bundle checks. Confirm the active compute backend
+core, and Node.js ^20.19.0 or >=22.12.0 for bundle checks. Confirm the active compute backend
 explicitly:
 
 ~~~bash

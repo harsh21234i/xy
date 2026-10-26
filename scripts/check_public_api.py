@@ -371,19 +371,16 @@ def _has_doc_reference(
     receiver: str | None = None,
     allow_bare: bool = False,
 ) -> bool:
-    tokens = (
-        [f"`{name}`", f"`{name}()`", f"`{name}(`"]
-        if receiver is None
-        else [
-            f"`{receiver}.{name}`",
-            f"`{receiver}.{name}()`",
-            f"`{receiver}.{name}(`",
-            f"{receiver}.{name}(",
-        ]
-    )
+    if receiver is not None:
+        reference = re.escape(f"{receiver}.{name}")
+        return bool(
+            re.search(rf"(?<![A-Za-z0-9_.])`{reference}(?:\s*\([^`]*\))?`", text)
+            or re.search(rf"(?<![A-Za-z0-9_.]){reference}\s*\(", text)
+        )
+    tokens = [f"`{name}`", f"`{name}()`", f"`{name}("]
     if any(token in text for token in tokens):
         return True
-    reference = re.escape(f"{receiver}." if receiver is not None else "") + re.escape(name)
+    reference = re.escape(name)
     if re.search(rf"(?<![A-Za-z0-9_.])`{reference}(?:\s*\([^`]*\))?`", text):
         return True
     if receiver is not None or not allow_bare:

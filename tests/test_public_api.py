@@ -389,6 +389,12 @@ def test_public_api_docs_require_receiver_qualified_chart_methods() -> None:
     assert not check_public_api._has_doc_reference(
         "Call `figure()` to build the figure.", "figure", receiver="chart"
     )
+    assert not check_public_api._has_doc_reference(
+        "Call `facet_chart.show()` to display the facets.", "show", receiver="chart"
+    )
+    assert check_public_api._has_doc_reference(
+        "Call `chart.show()` to display the chart.", "show", receiver="chart"
+    )
     assert check_public_api._has_doc_reference("Use `xy(trace_id=0)` for one trace.", "xy")
     assert check_public_api._has_doc_reference("Use `rows(limit=None)` for row data.", "rows")
     assert not check_public_api._has_doc_reference("unrelated figure() text", "figure")

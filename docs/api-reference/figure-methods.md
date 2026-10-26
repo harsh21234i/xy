@@ -144,11 +144,9 @@ objects. `reflex_components()` is an alias retained for adapter code.
 
 ## FacetChart Methods
 
-`FacetChart` provides `facet_chart.figure()`, `facet_chart.widget()`,
-`facet_chart.show()`, `facet_chart.to_html()`/`facet_chart.html()`,
-`facet_chart._repr_html_()`, `facet_chart.to_svg()`, `facet_chart.to_png()`,
-`facet_chart.to_image()`, `facet_chart.write_image()`, and
-`facet_chart.memory_report()`. Its widget methods return one
+An instance returned by `xy.facet_chart(...)` provides `figure()`, `widget()`,
+`show()`, `to_html()`/`html()`, `_repr_html_()`, `to_svg()`, `to_png()`,
+`to_image()`, `write_image()`, and `memory_report()`. Its widget methods return one
 widget per panel, and its figure escape hatch returns an internal facet grid.
 Grid dimensions come from `facet_chart()`, so the facet SVG/PNG methods do not
 accept per-call width or height. Facets do not expose append, pick, or
