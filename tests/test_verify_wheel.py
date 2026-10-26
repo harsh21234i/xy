@@ -182,6 +182,21 @@ def test_macho_linkage_rejects_binary_above_wheel_floor() -> None:
         verify_wheel._require_macho_linkage("native", bytes(data), "macosx_11_0_arm64")
 
 
+def test_macho_linkage_rejects_unbundled_rpath_dependency() -> None:
+    data = bytearray(104)
+    data[:4] = b"\xcf\xfa\xed\xfe"
+    struct.pack_into("<I", data, 4, 0x0100000C)
+    struct.pack_into("<II", data, 16, 2, 72)
+    struct.pack_into("<II", data, 32, 0xC, 48)
+    struct.pack_into("<I", data, 40, 24)
+    dependency = b"@rpath/libxydep.dylib\0"
+    data[56 : 56 + len(dependency)] = dependency
+    struct.pack_into("<IIIIII", data, 80, 0x32, 24, 0, 11 << 16, 0, 0)
+
+    with pytest.raises(AssertionError, match="unsupported macOS dependencies"):
+        verify_wheel._require_macho_linkage("native", bytes(data), "macosx_11_0_arm64")
+
+
 def test_linkage_validation_requires_platform() -> None:
     with pytest.raises(AssertionError, match="requires an expected native wheel platform"):
         verify_wheel.verify_wheel(Path("missing.whl"), expect_native=True, require_linkage=True)
@@ -195,6 +210,18 @@ def test_linkage_validation_requires_native_wheel() -> None:
             expect_platform="win_amd64",
             require_linkage=True,
         )
+
+
+@pytest.mark.parametrize(
+    "options",
+    [
+        {"expect_platform": "win_amd64"},
+        {"required_symbols": {"xy_abi_version"}},
+    ],
+)
+def test_platform_and_symbol_checks_require_native_mode(options: dict[str, object]) -> None:
+    with pytest.raises(AssertionError, match="require --expect-native"):
+        verify_wheel.verify_wheel(Path("missing.whl"), expect_native=None, **options)
 
 
 def _elf_linkage_fixture(interpreter: bytes, dependency: bytes, version: bytes = b"") -> bytes:
@@ -234,6 +261,20 @@ def test_elf_linkage_validates_glibc_floor_and_dependency_family() -> None:
             "manylinux_2_17_x86_64",
         )
 
+    with pytest.raises(AssertionError, match="unsupported glibc dependencies"):
+        verify_wheel._require_elf_linkage(
+            "native",
+            _elf_linkage_fixture(
+                b"/lib64/ld-linux-x86-64.so.2\0", b"libnotallowed.so.1", b"GLIBC_2.17"
+            ),
+            "manylinux_2_17_x86_64",
+        )
+
+
+def test_musl_shared_library_without_interpreter_uses_needed_libc() -> None:
+    binary = _elf_linkage_fixture(b"", b"libc.musl-x86_64.so.1")
+    verify_wheel._require_elf_linkage("native", binary, "musllinux_1_2_x86_64")
+
 
 @pytest.mark.parametrize(
     "dependency",
@@ -244,7 +285,7 @@ def test_elf_linkage_accepts_manylinux2014_system_libraries(dependency: bytes) -
     verify_wheel._require_elf_linkage("native", binary, "manylinux_2_17_x86_64")
 
 
-def _pe_linkage_fixture(dependency: bytes) -> bytes:
+def _pe_linkage_fixture(dependency: bytes, *, delay_load: bool = False) -> bytes:
     data = bytearray(0x400)
     data[:2] = b"MZ"
     struct.pack_into("<I", data, 0x3C, 64)
@@ -252,11 +293,16 @@ def _pe_linkage_fixture(dependency: bytes) -> bytes:
     struct.pack_into("<HH", data, 68, 0x8664, 1)
     struct.pack_into("<H", data, 84, 240)
     struct.pack_into("<H", data, 88, 0x20B)
+    struct.pack_into("<I", data, 196, 16)
     struct.pack_into("<II", data, 208, 0x1000, 40)
     section = 328
     struct.pack_into("<IIII", data, section + 8, 512, 0x1000, 512, 0x200)
     struct.pack_into("<IIIII", data, 0x200, 0, 0, 0, 0x1028, 0)
     data[0x228 : 0x228 + len(dependency)] = dependency
+    if delay_load:
+        struct.pack_into("<II", data, 304, 0x1040, 32)
+        struct.pack_into("<II", data, 0x240, 1, 0x1080)
+        data[0x280 : 0x280 + len(dependency)] = dependency
     return bytes(data)
 
 
@@ -268,6 +314,13 @@ def test_pe_linkage_accepts_windows_system_imports(dependency: bytes) -> None:
 def test_pe_linkage_rejects_imports_that_only_prefix_match_a_system_dll() -> None:
     with pytest.raises(AssertionError, match="unsupported Windows imports"):
         verify_wheel._require_pe_linkage("native", _pe_linkage_fixture(b"kernel32.dll.evil\0"))
+
+
+def test_pe_linkage_rejects_unsupported_delay_load_imports() -> None:
+    with pytest.raises(AssertionError, match="unsupported Windows imports"):
+        verify_wheel._require_pe_linkage(
+            "native", _pe_linkage_fixture(b"evil.dll\0", delay_load=True)
+        )
 
 
 def test_expected_platform_must_match_wheel_tag(tmp_path: Path) -> None:

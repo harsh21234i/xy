@@ -385,16 +385,25 @@ def _macho_linkage(
 
 
 def _pe_imports(name: str, data: bytes, pe_offset: int, optional_magic: int) -> tuple[str, ...]:
-    """Read DLL names from the PE import directory."""
+    """Read DLL names from the PE import and delay-load directories."""
     optional_offset = pe_offset + 24
-    data_directory_offset = optional_offset + (104 if optional_magic == 0x10B else 120)
-    if data_directory_offset + 8 > len(data):
+    data_directory_offset = optional_offset + (96 if optional_magic == 0x10B else 112)
+    directory_count_offset = optional_offset + (92 if optional_magic == 0x10B else 108)
+    optional_size = struct.unpack_from("<H", data, pe_offset + 20)[0]
+    optional_end = optional_offset + optional_size
+    if directory_count_offset + 4 > optional_end:
         return ()
-    import_rva, import_size = struct.unpack_from("<II", data, data_directory_offset)
-    if not import_rva or not import_size:
+    directory_count = struct.unpack_from("<I", data, directory_count_offset)[0]
+    directory_limit = min(directory_count, (optional_end - data_directory_offset) // 8)
+    directories: list[tuple[int, int, bool]] = []
+    for index, is_delay in ((1, False), (13, True)):
+        if index < directory_limit:
+            rva, size = struct.unpack_from("<II", data, data_directory_offset + index * 8)
+            if rva and size:
+                directories.append((rva, size, is_delay))
+    if not directories:
         return ()
     section_count = struct.unpack_from("<H", data, pe_offset + 6)[0]
-    optional_size = struct.unpack_from("<H", data, pe_offset + 20)[0]
     section_offset = optional_offset + optional_size
     sections: list[tuple[int, int, int]] = []
     for index in range(section_count):
@@ -409,24 +418,39 @@ def _pe_imports(name: str, data: bytes, pe_offset: int, optional_magic: int) -> 
     def file_offset(rva: int) -> int:
         for virtual_address, size, raw_offset in sections:
             if virtual_address <= rva < virtual_address + size:
-                return raw_offset + rva - virtual_address
+                offset = raw_offset + rva - virtual_address
+                if offset < len(data):
+                    return offset
+                break
         raise AssertionError(f"{name} has an import RVA outside its PE sections")
 
-    import_offset = file_offset(import_rva)
     imports: list[str] = []
-    for offset in range(import_offset, import_offset + import_size, 20):
-        if offset + 20 > len(data):
-            raise AssertionError(f"{name} has a truncated PE import directory")
-        original_thunk, timestamp, forwarder, name_rva, first_thunk = struct.unpack_from(
-            "<IIIII", data, offset
-        )
-        if not any((original_thunk, timestamp, forwarder, name_rva, first_thunk)):
-            break
-        string_offset = file_offset(name_rva)
-        end = data.find(b"\0", string_offset)
-        if end <= string_offset:
-            raise AssertionError(f"{name} has an unterminated PE import name")
-        imports.append(data[string_offset:end].decode("ascii", errors="replace"))
+    image_base = struct.unpack_from(
+        "<I" if optional_magic == 0x10B else "<Q",
+        data,
+        optional_offset + (28 if optional_magic == 0x10B else 24),
+    )[0]
+    for directory_rva, directory_size, is_delay in directories:
+        descriptor_size = 32 if is_delay else 20
+        directory_offset = file_offset(directory_rva)
+        for offset in range(directory_offset, directory_offset + directory_size, descriptor_size):
+            if offset + descriptor_size > len(data):
+                raise AssertionError(f"{name} has a truncated PE import directory")
+            if is_delay:
+                attributes, name_value = struct.unpack_from("<II", data, offset)
+                if not any(data[offset : offset + descriptor_size]):
+                    break
+                name_rva = name_value if attributes & 1 else name_value - image_base
+            else:
+                fields = struct.unpack_from("<IIIII", data, offset)
+                if not any(fields):
+                    break
+                name_rva = fields[3]
+            string_offset = file_offset(name_rva)
+            end = data.find(b"\0", string_offset)
+            if end <= string_offset:
+                raise AssertionError(f"{name} has an unterminated PE import name")
+            imports.append(data[string_offset:end].decode("ascii", errors="replace"))
     return tuple(imports)
 
 
@@ -564,8 +588,12 @@ def _require_elf_linkage(name: str, data: bytes, platform: str) -> None:
             version = ".".join(map(str, max(versions)))
             raise AssertionError(f"{name} requires glibc {version}, above manylinux_2_17")
     elif platform.startswith("musllinux_"):
-        if "musl" not in interpreter:
+        if interpreter and "musl" not in interpreter:
             raise AssertionError(f"{name} is not linked against musl: interpreter={interpreter!r}")
+        if not interpreter and not any(
+            dependency.startswith(("libc.musl-", "ld-musl-")) for dependency in dependencies
+        ):
+            raise AssertionError(f"{name} has no detectable musl linkage")
         unexpected = sorted(
             dependency
             for dependency in dependencies
@@ -590,7 +618,7 @@ def _require_macho_linkage(name: str, data: bytes, platform: str) -> None:
     unexpected = sorted(
         dependency
         for dependency in dependencies
-        if not dependency.startswith(("/usr/lib/", "/System/Library/", "@rpath/", "@loader_path/"))
+        if not dependency.startswith(("/usr/lib/", "/System/Library/"))
     )
     if unexpected:
         raise AssertionError(f"{name} has unsupported macOS dependencies: {unexpected}")
@@ -854,6 +882,10 @@ def verify_wheel(
 ) -> None:
     if require_linkage and (expect_native is not True or expect_platform is None):
         raise AssertionError("linkage validation requires an expected native wheel platform tag")
+    if (expect_platform is not None or required_symbols) and expect_native is not True:
+        raise AssertionError("platform and ABI symbol checks require --expect-native")
+    if (expect_platform is not None or required_symbols) and expect_native is not True:
+        raise AssertionError("platform and ABI symbol checks require --expect-native")
     with zipfile.ZipFile(path) as zf:
         _require_unique_archive_members(zf.infolist())
         names = set(zf.namelist())

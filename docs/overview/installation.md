@@ -33,20 +33,20 @@ python -c "import xy; print(xy.__version__)"
 Prebuilt native wheels are published only for targets that the release
 workflow can install, load, and exercise on a matching hosted runner.
 
-| Platform | Compatibility | Architecture | Native wheel |
+| Platform | Compatibility | Architecture | Release artifact |
 | --- | --- | --- | --- |
 | Linux | glibc (`manylinux_2_17`) | `x86_64` | Included; runtime verified |
 | macOS | macOS 11+ on Apple silicon | `arm64` | Included; runtime verified |
 | Windows | Native Windows | `x86_64` | Included; runtime verified |
-| WebAssembly | Pyodide 314 (Emscripten, PEP 783) | `wasm32` | Included; runtime verified |
+| WebAssembly | Pyodide 314 (Emscripten, PEP 783) | `wasm32` | PyEmscripten wheel; runtime verified |
 
 Other architectures and operating systems may be buildable from source with a
 compatible Rust toolchain, but are not part of the published wheel matrix until
 the release workflow can run an install and native-kernel smoke test for them.
 
 The runtime-verified WebAssembly wheel targets the standardized PEP 783
-`pyemscripten_2026_0_wasm32` platform and, as of 0.0.3, is published to PyPI
-alongside the native wheels. In-browser Python installs it by package name —
+`pyemscripten_2026_0_wasm32` platform and is published alongside the native
+wheels. In-browser Python installs it by package name —
 `micropip.install("xy")`, or `%pip install xy` in a JupyterLite notebook.
 This target runs XY's Python and Rust core inside Pyodide; it is separate
 from the JavaScript/WebGL client included with every chart. See
