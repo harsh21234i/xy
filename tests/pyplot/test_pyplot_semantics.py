@@ -82,14 +82,39 @@ def test_minor_tick_getters_support_inset_freeform_and_twin_axes() -> None:
     fig, ax = xyplt.subplots(figsize=(3.0, 2.0))
     inset = ax.inset_axes((0.1, 0.1, 0.4, 0.4))
     inset.plot([0.0, 1.0], [0.0, 1.0])
-    inset.minorticks_on()
-    assert inset.get_xticks(minor=True).size > 0
+    inset.set_xlim(0.0, 10.0)
+    inset.xaxis.set_major_locator(xyplt.MultipleLocator(2.0))
+    inset.xaxis.set_minor_locator(xyplt.MultipleLocator(1.0))
+    np.testing.assert_array_equal(inset.get_xticks(minor=True), [1.0, 3.0, 5.0, 7.0, 9.0])
 
     freeform = fig.add_axes((0.1, 0.1, 0.3, 0.3))
     freeform.plot([0.0, 1.0], [0.0, 1.0])
-    freeform.minorticks_on()
-    assert freeform.get_yticks(minor=True).size > 0
+    freeform.set_ylim(0.0, 10.0)
+    freeform.yaxis.set_major_locator(xyplt.MultipleLocator(2.0))
+    freeform.yaxis.set_minor_locator(xyplt.MultipleLocator(1.0))
+    np.testing.assert_array_equal(freeform.get_yticks(minor=True), [1.0, 3.0, 5.0, 7.0, 9.0])
 
     twin = ax.twinx()
-    twin.minorticks_on()
-    assert twin.get_yticks(minor=True).size > 0
+    twin.set_ylim(0.0, 10.0)
+    twin.yaxis.set_major_locator(xyplt.MultipleLocator(2.0))
+    twin.yaxis.set_minor_locator(xyplt.MultipleLocator(1.0))
+    np.testing.assert_array_equal(twin.get_yticks(minor=True), [1.0, 3.0, 5.0, 7.0, 9.0])
+
+
+def test_shared_minor_tick_getters_use_the_queried_panel_size() -> None:
+    fig, axes = xyplt.subplots(
+        1,
+        2,
+        figsize=(5.0, 2.0),
+        sharex=True,
+        width_ratios=(1.0, 2.0),
+    )
+    for ax in axes:
+        ax.plot([0.0, 10.0], [0.0, 10.0])
+        ax.set_xlim(0.0, 10.0)
+        ax.minorticks_on()
+
+    queried = [ax.get_xticks(minor=True) for ax in axes]
+    chart_specs = [chart.figure().build_payload_split()[0] for chart in fig._charts()]
+    for ticks, spec in zip(queried, chart_specs, strict=True):
+        np.testing.assert_array_equal(ticks, spec["x_axis"]["minor_tick_values"])

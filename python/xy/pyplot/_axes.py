@@ -6762,7 +6762,7 @@ class Axes(PlotTypeMixin):
             # fills a copied wire payload; getters must return the same
             # locations without requiring a render or mutating axis state.
             minor_props = dict(props)
-            figure = host.figure
+            figure = base.figure
             canvas_width, canvas_height = rc_figsize_px(figure._figsize, figure._dpi)
 
             def chart_size(axes: Axes) -> tuple[int, int]:
@@ -6787,16 +6787,16 @@ class Axes(PlotTypeMixin):
                             )
                 return canvas_width, canvas_height
 
-            width, height = chart_size(host)
+            width, height = chart_size(base)
             # Rendering recomputes this hint from the live chart size on every
             # build, so a locator's cached hint can be stale after resizing.
             count_key = "y" if key == "y2" else key
-            nbins_hint = host._auto_tick_counts(host._axis["x"], width, height)[count_key]
-            host._apply_tickers(key, minor_props, nbins_hint)
+            nbins_hint = base._auto_tick_counts(base._axis["x"], width, height)[count_key]
+            base._apply_tickers(key, minor_props, nbins_hint)
             return np.asarray(
                 _scale_values(
                     minor_props.get("minor_tick_values", []),
-                    host._scale_specs[key],
+                    base._scale_specs[key],
                     inverse=True,
                 ),
                 dtype=float,
