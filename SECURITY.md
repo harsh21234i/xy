@@ -35,7 +35,7 @@ metadata is rejected.
 - The native core is a local in-process C-ABI library; it processes only data
   already in the caller's process and performs no I/O or network access.
 - Active committed dependency locks are scanned on relevant pull requests and
-  weekly. Python and Rust fail on every advisory; npm and Bun fail on high or
+  weekly. Python and Rust fail on vulnerability advisories; npm and Bun fail on high or
   critical advisories. No ignores are currently allowed. Run
   `make check-dependency-audit` locally; the scope and frozen-evidence exception
   are documented in the audit trail.

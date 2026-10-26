@@ -39,6 +39,7 @@ def test_inventory_includes_audited_and_frozen_evidence_locks() -> None:
     assert actual == inventory.EXPECTED_LOCKFILES
     assert inventory.AUDITED_LOCKFILES.isdisjoint(inventory.FROZEN_EVIDENCE_LOCKFILES)
     assert all("launch_baselines" in path for path in inventory.FROZEN_EVIDENCE_LOCKFILES)
+    assert set(audit_dependencies.AUDIT_HANDLERS) == inventory.AUDITED_LOCKFILES
 
 
 def test_dependency_audit_uses_the_inventory_and_every_active_ecosystem(monkeypatch) -> None:
@@ -59,7 +60,12 @@ def test_dependency_audit_uses_the_inventory_and_every_active_ecosystem(monkeypa
     assert any(command[:2] == ("cargo", "audit") for command in commands)
     assert any(command[:2] == ("npm", "audit") for command in commands)
     assert any(command[:2] == ("bun", "audit") for command in commands)
-    assert sum("pip-audit" in command for command in commands) == 3
+    pylock_exports = [command for command in commands if command[:2] == ("uv", "export")]
+    pylock_audits = [command for command in commands if "pip-audit" in command]
+    assert len(pylock_exports) == 2
+    assert all("--format" in command and "pylock.toml" in command for command in pylock_exports)
+    assert len(pylock_audits) == 3
+    assert all("--locked" in command for command in pylock_audits[:2])
 
 
 def test_security_workflow_uses_the_shared_local_audit_gate() -> None:

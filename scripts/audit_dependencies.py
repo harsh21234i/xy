@@ -6,9 +6,24 @@ from __future__ import annotations
 import shutil
 import subprocess
 import sys
+import tempfile
 from pathlib import Path
 
+try:
+    from scripts.verify_dependency_lock_inventory import AUDITED_LOCKFILES
+except ModuleNotFoundError:
+    from verify_dependency_lock_inventory import AUDITED_LOCKFILES
+
 ROOT = Path(__file__).resolve().parents[1]
+AUDIT_HANDLERS = {
+    "Cargo.lock": "cargo audit",
+    "examples/osm/osmium-rs/Cargo.lock": "cargo audit --file",
+    "package-lock.json": "npm audit",
+    "uv.lock": "pip-audit --locked (exported pylock)",
+    "docs/app/uv.lock": "pip-audit --locked (exported pylock)",
+    "docs/app/reflex.lock/bun.lock": "bun audit",
+    "benchmarks/requirements-ci.lock": "pip-audit -r",
+}
 
 
 def _run(label: str, command: tuple[str, ...], *, cwd: Path = ROOT) -> None:
@@ -17,7 +32,7 @@ def _run(label: str, command: tuple[str, ...], *, cwd: Path = ROOT) -> None:
 
 
 def _require_tools() -> None:
-    required = ("uv", "cargo-audit", "npm", "bun")
+    required = ("uv", "uvx", "cargo-audit", "npm", "bun")
     missing = [tool for tool in required if shutil.which(tool) is None]
     if missing:
         names = ", ".join(missing)
@@ -27,49 +42,66 @@ def _require_tools() -> None:
         )
 
 
+def _verify_audit_coverage() -> None:
+    missing = sorted(AUDITED_LOCKFILES - AUDIT_HANDLERS.keys())
+    untracked = sorted(AUDIT_HANDLERS.keys() - AUDITED_LOCKFILES)
+    if missing or untracked:
+        raise RuntimeError(
+            "dependency audit handlers do not match the lock inventory: "
+            f"missing={missing}, untracked={untracked}"
+        )
+
+
+def _audit_uv_project(label: str, project: str) -> None:
+    """Audit every dependency variant in a universal uv lockfile."""
+    with tempfile.TemporaryDirectory(prefix="xy-pylock-audit-") as temp_dir:
+        _run(
+            f"export {label} universal Python lock",
+            (
+                "uv",
+                "export",
+                "--project",
+                project,
+                "--locked",
+                "--all-extras",
+                "--all-groups",
+                "--no-emit-project",
+                "--format",
+                "pylock.toml",
+                "--output-file",
+                str(Path(temp_dir) / "pylock.toml"),
+                "--quiet",
+            ),
+        )
+        _run(
+            f"audit {label} universal Python lock",
+            (
+                "uv",
+                "run",
+                "--project",
+                project,
+                "--no-sync",
+                "--with",
+                "pip-audit",
+                "pip-audit",
+                "--locked",
+                temp_dir,
+                "--progress-spinner",
+                "off",
+            ),
+        )
+
+
 def main() -> int:
     try:
+        _verify_audit_coverage()
         _require_tools()
         _run(
             "verify dependency lock inventory",
             (sys.executable, "scripts/verify_dependency_lock_inventory.py"),
         )
-        _run(
-            "sync root Python environment",
-            ("uv", "sync", "--locked", "--all-extras", "--all-groups"),
-        )
-        _run(
-            "audit root Python environment",
-            (
-                "uv",
-                "run",
-                "--no-sync",
-                "--with",
-                "pip-audit",
-                "pip-audit",
-                "--progress-spinner",
-                "off",
-            ),
-        )
-        _run(
-            "sync documentation Python environment",
-            ("uv", "sync", "--project", "docs/app", "--locked", "--group", "dev"),
-        )
-        _run(
-            "audit documentation Python environment",
-            (
-                "uv",
-                "run",
-                "--project",
-                "docs/app",
-                "--no-sync",
-                "--with",
-                "pip-audit",
-                "pip-audit",
-                "--progress-spinner",
-                "off",
-            ),
-        )
+        _audit_uv_project("root", ".")
+        _audit_uv_project("documentation", "docs/app")
         _run(
             "audit benchmark Python lock",
             (

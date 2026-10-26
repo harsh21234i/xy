@@ -385,6 +385,7 @@ def run(*, profile: str, reps: int, chromium: str | None = None) -> dict[str, An
     if chromium:
         # The opt-in Chromium row forces SwiftShader independently of benchmark flags.
         environment["browser_renderer"] = "software-gl"
+        environment["chromium_sandbox"] = False
     return {
         "schema_version": SCHEMA_VERSION,
         "kind": "workflow-native",
