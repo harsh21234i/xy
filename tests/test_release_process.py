@@ -219,7 +219,8 @@ def test_every_native_wheel_target_runs_the_install_smoke() -> None:
         "win32",
         "win_arm64",
     }
-    assert all(re.search(r"\bsmoke: [A-Za-z0-9-]+", line) for line in wheel_entries), wheel_entries
+    smoke_modes = set(re.findall(r"\bsmoke: ([A-Za-z0-9-]+)", "\n".join(wheel_entries)))
+    assert smoke_modes == {"host", "manylinux-armv7", "alpine", "alpine-armv7"}
     assert "if: matrix.smoke == 'host'" in build
     assert "if: matrix.smoke == 'manylinux-armv7'" in build
     assert "if: matrix.smoke == 'alpine'" in build
