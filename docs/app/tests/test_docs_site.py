@@ -1582,8 +1582,11 @@ def test_installation_distinguishes_supported_targets_from_pypi_artifacts() -> N
 
     assert "`x86_64`, `arm64`" in macos_row
     assert "macOS 10.12+ on Intel" in macos_row
+    assert "Included" in macos_row
     assert "`x86_64`, `aarch64`, `armv7l`" in glibc_row
+    assert "Included" in glibc_row
     assert "`x86_64`, `aarch64`, `armv7l`" in musl_row
+    assert "Included" in musl_row
     assert "`x86_64`, `x86`, `arm64`" in windows_row
     assert "Supported" in windows_row
     assert "Not included" in windows_row
