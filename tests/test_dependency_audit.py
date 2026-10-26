@@ -65,6 +65,6 @@ def test_dependency_audit_uses_the_inventory_and_every_active_ecosystem(monkeypa
 def test_security_workflow_uses_the_shared_local_audit_gate() -> None:
     workflow = (ROOT / ".github" / "workflows" / "security-audit.yml").read_text(encoding="utf-8")
 
-    assert "run: make check-dependency-audit" in workflow
+    assert "run: make PYTHON=python3 check-dependency-audit" in workflow
     assert 'bun-version: "1.4.2"' in workflow
     assert '"scripts/audit_dependencies.py"' in workflow

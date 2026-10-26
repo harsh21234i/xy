@@ -71,4 +71,4 @@ jobs:
         run: cargo install cargo-audit --locked
 
       - name: Audit active dependency locks
-        run: make check-dependency-audit
+        run: make PYTHON=python3 check-dependency-audit
