@@ -23,10 +23,11 @@ import re
 import subprocess
 import sys
 import textwrap
-from dataclasses import dataclass
 from pathlib import Path
 from types import ModuleType
 from typing import Any, Optional, get_type_hints
+
+from xy._public_api_manifest import PUBLIC_API_MANIFEST, PublicApiInventory
 
 ROOT = Path(__file__).resolve().parents[1]
 IMPORT_BUDGET_MS = 200.0
@@ -49,180 +50,37 @@ HEAVY_XY_IMPORTS = {
     "xy.widget",
 }
 HEAVY_IMPORTS = HEAVY_THIRD_PARTY_IMPORTS | HEAVY_XY_IMPORTS
-COMPONENT_REEXPORTS = {"CHART_DOM_SLOTS", "structural_probe"}
+COMPONENT_REEXPORTS = set(PUBLIC_API_MANIFEST.component_reexports)
+MARK_FACTORY_CATEGORY = "mark_factories"
+ANNOTATION_FACTORY_CATEGORY = "annotation_factories"
+AXIS_FACTORY_CATEGORY = "axis_factories"
+CHROME_FACTORY_CATEGORY = "chrome_factories"
+CHART_FACTORY_CATEGORY = "chart_factories"
+SUPPORT_FACTORY_CATEGORY = "support_factories"
+FACTORY_CATEGORY_FIELDS = (
+    MARK_FACTORY_CATEGORY,
+    ANNOTATION_FACTORY_CATEGORY,
+    AXIS_FACTORY_CATEGORY,
+    CHROME_FACTORY_CATEGORY,
+    CHART_FACTORY_CATEGORY,
+    SUPPORT_FACTORY_CATEGORY,
+)
 CHROME_RETURN_TYPES = {"Colorbar", "Interaction", "Legend", "Modebar", "Theme", "Tooltip"}
 SUPPORT_RETURN_TYPES = {"Animation", "ExportConfig", "FacetChart", "Spring"}
+FACTORY_CATEGORY_BY_RETURN_TYPE = {
+    "Mark": MARK_FACTORY_CATEGORY,
+    "Annotation": ANNOTATION_FACTORY_CATEGORY,
+    "Axis": AXIS_FACTORY_CATEGORY,
+    "Chart": CHART_FACTORY_CATEGORY,
+    **dict.fromkeys(CHROME_RETURN_TYPES, CHROME_FACTORY_CATEGORY),
+    **dict.fromkeys(SUPPORT_RETURN_TYPES, SUPPORT_FACTORY_CATEGORY),
+}
 SPECIAL_PUBLIC_CHART_METHODS = {"_repr_html_"}
 SPECIAL_PUBLIC_SELECTION_METHODS = {"__len__"}
-EXPERIMENTAL_PUBLIC_EXPORTS: tuple[str, ...] = ()
-DEPRECATED_PUBLIC_EXPORTS: tuple[str, ...] = ()
-PRIVATE_PUBLIC_EXPORTS: tuple[str, ...] = ()
+SPECIAL_PUBLIC_FACET_CHART_METHODS = {"_repr_html_"}
 CHART_METHOD_DOC = ROOT / "docs" / "api-reference" / "figure-methods.md"
 SELECTION_METHOD_DOC = ROOT / "docs" / "api-reference" / "events-and-callbacks.md"
-
-
-@dataclass(frozen=True)
-class PublicApiInventory:
-    """Machine-readable inventory of the supported public composition API."""
-
-    component_reexports: tuple[str, ...]
-    component_types: tuple[str, ...]
-    mark_factories: tuple[str, ...]
-    annotation_factories: tuple[str, ...]
-    axis_factories: tuple[str, ...]
-    chrome_factories: tuple[str, ...]
-    chart_factories: tuple[str, ...]
-    support_factories: tuple[str, ...]
-    chart_methods: tuple[str, ...]
-    selection_methods: tuple[str, ...]
-    experimental_exports: tuple[str, ...] = EXPERIMENTAL_PUBLIC_EXPORTS
-    deprecated_exports: tuple[str, ...] = DEPRECATED_PUBLIC_EXPORTS
-    private_exports: tuple[str, ...] = PRIVATE_PUBLIC_EXPORTS
-
-    @property
-    def component_factories(self) -> tuple[str, ...]:
-        return (
-            *self.mark_factories,
-            *self.annotation_factories,
-            *self.axis_factories,
-            *self.chrome_factories,
-            *self.chart_factories,
-            *self.support_factories,
-        )
-
-    @property
-    def declarative_exports(self) -> tuple[str, ...]:
-        return (
-            *self.component_types,
-            *self.component_factories,
-        )
-
-    @property
-    def classified_component_exports(self) -> tuple[str, ...]:
-        return (
-            *self.component_reexports,
-            *self.declarative_exports,
-            *self.experimental_exports,
-            *self.deprecated_exports,
-            *self.private_exports,
-        )
-
-
-PUBLIC_API_MANIFEST = PublicApiInventory(
-    component_reexports=("CHART_DOM_SLOTS", "structural_probe"),
-    component_types=(
-        "Animation",
-        "Annotation",
-        "Axis",
-        "Chart",
-        "Colorbar",
-        "Component",
-        "ExportConfig",
-        "FacetChart",
-        "Interaction",
-        "Legend",
-        "Mark",
-        "Modebar",
-        "Spring",
-        "Theme",
-        "Tooltip",
-    ),
-    mark_factories=(
-        "area",
-        "bar",
-        "box",
-        "column",
-        "contour",
-        "ecdf",
-        "error_band",
-        "errorbar",
-        "funnel",
-        "heatmap",
-        "hexbin",
-        "hist",
-        "histogram",
-        "line",
-        "mark",
-        "ribbon",
-        "sankey",
-        "scatter",
-        "segments",
-        "stairs",
-        "stem",
-        "step",
-        "triangle_mesh",
-        "violin",
-    ),
-    annotation_factories=(
-        "arrow",
-        "callout",
-        "hline",
-        "label",
-        "marker",
-        "text",
-        "threshold",
-        "threshold_zone",
-        "vline",
-        "x_band",
-        "y_band",
-    ),
-    axis_factories=("r_axis", "theta_axis", "x_axis", "y_axis"),
-    chrome_factories=("colorbar", "interaction_config", "legend", "modebar", "theme", "tooltip"),
-    chart_factories=(
-        "area_chart",
-        "bar_chart",
-        "box_chart",
-        "chart",
-        "column_chart",
-        "contour_chart",
-        "ecdf_chart",
-        "error_band_chart",
-        "errorbar_chart",
-        "funnel_chart",
-        "heatmap_chart",
-        "hexbin_chart",
-        "histogram_chart",
-        "line_chart",
-        "pie_chart",
-        "polar_bar_chart",
-        "polar_chart",
-        "radar_chart",
-        "sankey_chart",
-        "scatter_chart",
-        "segments_chart",
-        "stairs_chart",
-        "stem_chart",
-        "step_chart",
-        "triangle_mesh_chart",
-        "violin_chart",
-        "wind_rose",
-    ),
-    support_factories=("animation", "export_config", "facet_chart", "spring"),
-    chart_methods=(
-        "figure",
-        "chrome_components",
-        "reflex_components",
-        "widget",
-        "show",
-        "set_view",
-        "reset_view",
-        "select",
-        "clear_selection",
-        "view_state",
-        "to_html",
-        "html",
-        "_repr_html_",
-        "to_svg",
-        "to_png",
-        "to_image",
-        "write_image",
-        "memory_report",
-        "append",
-        "pick",
-        "select_range",
-    ),
-    selection_methods=("index", "__len__", "xy", "rows"),
-)
+PUBLIC_TYPES_DOC = ROOT / "docs" / "api-reference" / "public-types.md"
 
 
 def _string_list(value: Any, label: str, errors: list[str]) -> list[str]:
@@ -346,14 +204,7 @@ def _return_type_name(value: Any) -> str | None:
 
 
 def _component_factory_categories(components_module: ModuleType) -> dict[str, list[str]]:
-    categories = {
-        "mark_factories": [],
-        "annotation_factories": [],
-        "axis_factories": [],
-        "chrome_factories": [],
-        "chart_factories": [],
-        "support_factories": [],
-    }
+    categories = {field_name: [] for field_name in FACTORY_CATEGORY_FIELDS}
     for name in getattr(components_module, "__all__", ()):
         if name in COMPONENT_REEXPORTS:
             continue
@@ -361,18 +212,9 @@ def _component_factory_categories(components_module: ModuleType) -> dict[str, li
         if not inspect.isfunction(value):
             continue
         return_name = _return_type_name(value)
-        if return_name == "Mark":
-            categories["mark_factories"].append(name)
-        elif return_name == "Annotation":
-            categories["annotation_factories"].append(name)
-        elif return_name == "Axis":
-            categories["axis_factories"].append(name)
-        elif return_name == "Chart":
-            categories["chart_factories"].append(name)
-        elif return_name in CHROME_RETURN_TYPES:
-            categories["chrome_factories"].append(name)
-        elif return_name in SUPPORT_RETURN_TYPES:
-            categories["support_factories"].append(name)
+        category = FACTORY_CATEGORY_BY_RETURN_TYPE.get(return_name)
+        if category is not None:
+            categories[category].append(name)
     return categories
 
 
@@ -385,6 +227,8 @@ def _public_methods(
     for name, value in cls.__dict__.items():
         if name == "__init__":
             continue
+        if isinstance(value, (classmethod, staticmethod)):
+            value = value.__func__
         if not callable(value) and not isinstance(value, property):
             continue
         if name.startswith("_") and name not in special_public_methods:
@@ -413,6 +257,15 @@ def build_public_api_inventory(
         components_module.Chart,
         special_public_methods=SPECIAL_PUBLIC_CHART_METHODS,
     )
+    facet_chart_class = getattr(components_module, "FacetChart", None)
+    facet_chart_methods = (
+        _public_methods(
+            facet_chart_class,
+            special_public_methods=SPECIAL_PUBLIC_FACET_CHART_METHODS,
+        )
+        if inspect.isclass(facet_chart_class)
+        else ()
+    )
     figure_module = importlib.import_module("._figure", pkg.__name__)
     selection_methods = _public_methods(
         figure_module.Selection,
@@ -421,13 +274,9 @@ def build_public_api_inventory(
     return PublicApiInventory(
         component_reexports=tuple(name for name in component_names if name in COMPONENT_REEXPORTS),
         component_types=component_types,
-        mark_factories=tuple(categories["mark_factories"]),
-        annotation_factories=tuple(categories["annotation_factories"]),
-        axis_factories=tuple(categories["axis_factories"]),
-        chrome_factories=tuple(categories["chrome_factories"]),
-        chart_factories=tuple(categories["chart_factories"]),
-        support_factories=tuple(categories["support_factories"]),
+        **{field_name: tuple(categories[field_name]) for field_name in FACTORY_CATEGORY_FIELDS},
         chart_methods=chart_methods,
+        facet_chart_methods=facet_chart_methods,
         selection_methods=selection_methods,
     )
 
@@ -445,6 +294,23 @@ def validate_public_api_inventory(
             errors,
         )
     )
+    classifications = (
+        inventory.component_reexports,
+        inventory.component_types,
+        *(getattr(inventory, field_name) for field_name in FACTORY_CATEGORY_FIELDS),
+        inventory.experimental_exports,
+        inventory.deprecated_exports,
+        inventory.private_exports,
+    )
+    seen: set[str] = set()
+    for names in classifications:
+        repeated = sorted({name for name in names if names.count(name) > 1})
+        if repeated:
+            errors.append(f"public API inventory repeats names within a classification: {repeated}")
+        duplicates = sorted(seen.intersection(names))
+        if duplicates:
+            errors.append(f"public API inventory classifies names more than once: {duplicates}")
+        seen.update(names)
     classified = set(inventory.classified_component_exports)
     missing = sorted(component_names - classified)
     stale = sorted(classified - component_names)
@@ -464,14 +330,13 @@ def validate_public_api_manifest(
     fields = (
         "component_reexports",
         "component_types",
-        "mark_factories",
-        "annotation_factories",
-        "axis_factories",
-        "chrome_factories",
-        "chart_factories",
-        "support_factories",
+        *FACTORY_CATEGORY_FIELDS,
         "chart_methods",
+        "facet_chart_methods",
         "selection_methods",
+        "experimental_exports",
+        "deprecated_exports",
+        "private_exports",
     )
     for field_name in fields:
         expected = set(getattr(manifest, field_name))
@@ -486,6 +351,16 @@ def validate_public_api_manifest(
             errors.append(
                 f"public API discovery contains unmanifested names ({field_name}): {added}"
             )
+    grouped_chart_factories = {
+        name for _group, names in manifest.chart_factory_groups for name in names
+    }
+    missing_from_groups = sorted(set(manifest.chart_factories) - grouped_chart_factories)
+    documented_factory_names = set(manifest.chart_factories) | set(manifest.support_factories)
+    stale_groups = sorted(grouped_chart_factories - documented_factory_names)
+    if missing_from_groups:
+        errors.append(f"chart factories missing from documentation groups: {missing_from_groups}")
+    if stale_groups:
+        errors.append(f"documentation groups contain unmanifested chart factories: {stale_groups}")
     return errors
 
 
@@ -496,15 +371,16 @@ def _has_doc_reference(
     receiver: str | None = None,
     allow_bare: bool = False,
 ) -> bool:
-    tokens = [f"`{name}`", f"`{name}()`", f"`{name}(`"]
-    if receiver is not None:
-        tokens.extend(
-            (
-                f"`{receiver}.{name}()`",
-                f"`{receiver}.{name}(`",
-                f"{receiver}.{name}(",
-            )
-        )
+    tokens = (
+        [f"`{name}`", f"`{name}()`", f"`{name}(`"]
+        if receiver is None
+        else [
+            f"`{receiver}.{name}`",
+            f"`{receiver}.{name}()`",
+            f"`{receiver}.{name}(`",
+            f"{receiver}.{name}(",
+        ]
+    )
     if any(token in text for token in tokens):
         return True
     reference = re.escape(f"{receiver}." if receiver is not None else "") + re.escape(name)
@@ -520,6 +396,7 @@ def validate_docs_inventory(
     *,
     chart_doc: Path = CHART_METHOD_DOC,
     selection_doc: Path = SELECTION_METHOD_DOC,
+    types_doc: Path = PUBLIC_TYPES_DOC,
 ) -> list[str]:
     """Ensure public methods have API reference coverage."""
     errors: list[str] = []
@@ -531,10 +408,22 @@ def validate_docs_inventory(
         selection_text = selection_doc.read_text(encoding="utf-8")
     except OSError as exc:
         return [f"cannot read Selection API docs {selection_doc}: {exc}"]
+    try:
+        types_text = types_doc.read_text(encoding="utf-8")
+    except OSError as exc:
+        return [f"cannot read public types docs {types_doc}: {exc}"]
 
-    for method in inventory.chart_methods:
-        if not _has_doc_reference(chart_text, method, receiver="chart"):
-            errors.append(f"Chart public method {method!r} is missing from {chart_doc}")
+    for type_name in inventory.component_types:
+        if f"`{type_name}`" not in types_text:
+            errors.append(f"public component type {type_name!r} is missing from {types_doc}")
+
+    for receiver, methods in (
+        ("chart", inventory.chart_methods),
+        ("facet_chart", inventory.facet_chart_methods),
+    ):
+        for method in methods:
+            if not _has_doc_reference(chart_text, method, receiver=receiver):
+                errors.append(f"{receiver} public method {method!r} is missing from {chart_doc}")
     selection_aliases = {"__len__": "len(selection)"}
     for method in inventory.selection_methods:
         token = selection_aliases.get(method)
@@ -605,7 +494,11 @@ def validate_declarative_api_contract(
             )
 
     for method in inventory.chart_methods:
-        value = getattr(chart_class, method, None)
+        value = inspect.getattr_static(chart_class, method, None)
+        if isinstance(value, property):
+            continue
+        if isinstance(value, (classmethod, staticmethod)):
+            value = value.__func__
         if not callable(value):
             errors.append(f"declarative Chart readout {method!r} must be callable")
     errors.extend(validate_docs_inventory(inventory))

@@ -15,13 +15,13 @@ code should build charts through components and call the public methods below.
 | Method | Contract |
 | --- | --- |
 | `chart.widget()` | Build or return the cached live AnyWidget. |
-| `chart.show()` | Return the same widget; it does not open a desktop browser. |
+| `chart.show()` | Return the live widget in widget mode or an `HtmlView` in HTML mode; it does not open a desktop browser. |
 | `chart.figure()` | Build or return the cached internal engine figure. |
 
 In a compatible notebook, leaving a chart as the final cell expression invokes
 its display hook automatically. In `display="auto"` mode, controlled by
 `XY_NOTEBOOK_DISPLAY`, supported notebooks use the live widget and HTML mode
-uses `_repr_html_()` as the standalone-HTML path. Python callbacks require the
+uses `chart._repr_html_()` as the standalone-HTML path. Python callbacks require the
 live widget or a framework adapter.
 
 ## HTML and Static Export
@@ -126,8 +126,10 @@ state: dict = chart.view_state()
   non-durable.
 - `clear_selection()` clears the current selection, including range, polygon,
   and row selections.
-- `view_state()` returns the last client-confirmed viewport and selection state;
-  reads after writes are eventually consistent.
+- `chart.view_state()` returns the last client-confirmed viewport and selection
+  state; reads after writes are eventually consistent. For `chart.select(rows=...)`,
+  the state contains an opaque `{"rows": true}` marker rather than the selected
+  row indices.
 
 ## Framework Chrome
 
@@ -142,9 +144,11 @@ objects. `reflex_components()` is an alias retained for adapter code.
 
 ## FacetChart Methods
 
-`FacetChart` provides `figure()`, `widget()`, `show()`, `to_html()`/`html()`,
-`to_svg()`, `to_png()`, `to_image()`, `write_image()`, and `memory_report()`.
-Its widget methods return one
+`FacetChart` provides `facet_chart.figure()`, `facet_chart.widget()`,
+`facet_chart.show()`, `facet_chart.to_html()`/`facet_chart.html()`,
+`facet_chart._repr_html_()`, `facet_chart.to_svg()`, `facet_chart.to_png()`,
+`facet_chart.to_image()`, `facet_chart.write_image()`, and
+`facet_chart.memory_report()`. Its widget methods return one
 widget per panel, and its figure escape hatch returns an internal facet grid.
 Grid dimensions come from `facet_chart()`, so the facet SVG/PNG methods do not
 accept per-call width or height. Facets do not expose append, pick, or

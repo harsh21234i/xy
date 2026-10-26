@@ -27,8 +27,9 @@ CHROME_FACTORIES = PUBLIC_API_INVENTORY.chrome_factories
 SUPPORT_FACTORIES = PUBLIC_API_INVENTORY.support_factories
 CHART_READOUTS = PUBLIC_API_INVENTORY.chart_methods
 REGISTERED_MARK_FACTORIES = tuple(name for name in MARK_FACTORIES if name != "mark")
-FIGURE_BUILDERS = tuple(
-    name for name in (*MARK_FACTORIES, *ANNOTATION_FACTORIES) if hasattr(figure_module.Figure, name)
+FIGURE_BUILDERS = (*REGISTERED_MARK_FACTORIES, *ANNOTATION_FACTORIES)
+MISSING_FIGURE_BUILDERS = tuple(
+    name for name in FIGURE_BUILDERS if not hasattr(figure_module.Figure, name)
 )
 FIGURE_READOUTS = (
     "build_payload",
@@ -354,6 +355,7 @@ def test_chart_and_figure_png_export_types_stay_in_sync() -> None:
 
 
 def test_public_figure_methods_have_typed_signatures() -> None:
+    assert not MISSING_FIGURE_BUILDERS
     for name in (*FIGURE_BUILDERS, *FIGURE_READOUTS):
         fn = getattr(figure_module.Figure, name)
         hints = get_type_hints(fn)

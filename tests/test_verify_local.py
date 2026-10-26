@@ -34,6 +34,51 @@ def _load_verify_local_module():
     return module
 
 
+def _load_verify_docs_local_module():
+    path = Path(__file__).resolve().parents[1] / "scripts" / "verify_docs_local.py"
+    spec = importlib.util.spec_from_file_location("verify_docs_local", path)
+    assert spec is not None and spec.loader is not None
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+@pytest.mark.parametrize(
+    ("node_version", "supported"),
+    [
+        ("v20.19.0\n", True),
+        ("v20.18.1\n", False),
+        ("v21.7.3\n", False),
+        ("v22.11.0\n", False),
+        ("v22.12.0\n", True),
+        ("v24.14.0\n", True),
+    ],
+)
+def test_docs_gate_checks_the_locked_vite_node_range(
+    monkeypatch: pytest.MonkeyPatch,
+    node_version: str,
+    supported: bool,
+) -> None:
+    module = _load_verify_docs_local_module()
+    monkeypatch.setattr(module.shutil, "which", lambda _name: "node.exe")
+    monkeypatch.setattr(
+        module.subprocess,
+        "run",
+        lambda *_args, **_kwargs: subprocess.CompletedProcess([], 0, node_version, ""),
+    )
+
+    assert module.check_node_version() is supported
+
+
+def test_docs_ci_runs_the_local_quality_gate() -> None:
+    root = Path(__file__).resolve().parents[1]
+    workflow = (root / ".github/workflows/docs.yml").read_text(encoding="utf-8")
+
+    assert "uv run python scripts/verify_docs_local.py" in workflow
+    assert workflow.count('"scripts/verify_docs_local.py"') == 2
+    assert workflow.count('"scripts/check_public_api.py"') == 2
+
+
 verify_local = _load_verify_local_module()
 ROOT = Path(__file__).resolve().parents[1]
 

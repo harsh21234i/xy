@@ -41,6 +41,7 @@ from xy_docs.api_reference import (
     AXES_AND_ANNOTATIONS,
     CHART_FACTORY_GROUPS,
     CHROME_AND_BEHAVIOR,
+    FACTORY_DOCSTRING_ALIASES,
     MARKS,
     append_component_api_markdown,
     axes_and_annotations_api,
@@ -942,17 +943,6 @@ def test_handwritten_output_reference_tracks_the_public_api() -> None:
     assert all(block.language == "python" for block in method_blocks)
     assert "animation_progress=None" in method_blocks[0].content
 
-    view_selection_block = next(
-        block for block in method_blocks if "chart.set_view" in block.content
-    )
-    for method in (
-        "chart.set_view(",
-        "chart.reset_view(",
-        "chart.select(",
-        "chart.clear_selection(",
-        "chart.view_state()",
-    ):
-        assert method in view_selection_block.content
     for method in (xy.Chart.to_html, xy.Chart.html):
         assert "animation_progress" in inspect.signature(method).parameters
 
@@ -2868,7 +2858,8 @@ def test_documented_factories_describe_every_parameter() -> None:
     )
 
     for factory in factories:
-        docstring = inspect.getdoc(factory) or ""
+        documentation_source = FACTORY_DOCSTRING_ALIASES.get(factory, factory)
+        docstring = inspect.getdoc(documentation_source) or ""
         assert "Args:" in docstring, factory.__name__
         for parameter in inspect.signature(factory).parameters.values():
             assert f"{parameter.name}:" in docstring, (

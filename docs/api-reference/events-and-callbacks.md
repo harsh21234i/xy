@@ -50,7 +50,10 @@ chart = xy.scatter_chart(
   identity matters.
 - `xy(trace_id=0)` — canonical f64 x/y arrays for one selected trace.
 - `rows(limit=None)` — exact canonical row dictionaries for selected rows,
-  optionally capped for large selections.
+  optionally capped for large selections. Rows are returned in ascending trace
+  ID, then ascending canonical row index. A limit keeps the first N rows; this
+  method does not return a truncation flag, so compare `len(rows)` with
+  `len(selection)` to detect an incomplete result.
 - `len(selection)` — total selected rows across traces.
 
 Clearing selection delivers an empty `Selection`. `Chart.select_range()`

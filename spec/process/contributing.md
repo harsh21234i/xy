@@ -65,12 +65,6 @@ When canonical API prose changes, run the docs gate:
 make check-docs
 ```
 
-When canonical API examples change, run the example gate:
-
-```bash
-make check-examples
-```
-
 When packaging, workflows, or source-distribution/wheel contents change, run:
 
 ```bash
@@ -118,8 +112,7 @@ regression comparison scripts, or report-schema validation, run:
 make check-benchmark-harness
 ```
 
-When you edit `spec/api/api-examples.md` or the Reflex example dashboard
-registry/assets, run:
+When you edit the Reflex example dashboard registry/assets, run:
 
 ```bash
 make check-examples

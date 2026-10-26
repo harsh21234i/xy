@@ -383,6 +383,12 @@ def test_public_api_docs_require_receiver_qualified_chart_methods() -> None:
         "figure",
         receiver="chart",
     )
+    assert check_public_api._has_doc_reference(
+        "See `chart.figure` for the cached figure.", "figure", receiver="chart"
+    )
+    assert not check_public_api._has_doc_reference(
+        "Call `figure()` to build the figure.", "figure", receiver="chart"
+    )
     assert check_public_api._has_doc_reference("Use `xy(trace_id=0)` for one trace.", "xy")
     assert check_public_api._has_doc_reference("Use `rows(limit=None)` for row data.", "rows")
     assert not check_public_api._has_doc_reference("unrelated figure() text", "figure")
@@ -391,6 +397,38 @@ def test_public_api_docs_require_receiver_qualified_chart_methods() -> None:
         "figure",
         allow_bare=True,
     )
+
+
+def test_public_method_inventory_includes_classmethod_descriptors() -> None:
+    class Example:
+        @classmethod
+        def documented(cls) -> None:
+            del cls
+
+    assert check_public_api._public_methods(Example, special_public_methods=set()) == (
+        "documented",
+    )
+
+
+def test_public_api_manifest_validates_lifecycle_classifications() -> None:
+    inventory = replace(
+        check_public_api.PUBLIC_API_MANIFEST,
+        experimental_exports=("scatter",),
+    )
+
+    errors = check_public_api.validate_public_api_manifest(inventory)
+
+    assert any("experimental_exports" in error for error in errors)
+
+
+def test_public_api_inventory_rejects_overlapping_export_classifications() -> None:
+    fake, components = _fake_declarative_modules()
+    inventory = check_public_api.build_public_api_inventory(fake, components)
+    inventory = replace(inventory, component_types=(*inventory.component_types, "scatter"))
+
+    errors = check_public_api.validate_public_api_inventory(inventory, components)
+
+    assert any("classifies names more than once" in error for error in errors)
 
 
 def test_public_api_checker_rejects_missing_method_docs(tmp_path: Path) -> None:

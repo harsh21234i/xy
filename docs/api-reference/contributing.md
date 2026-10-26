@@ -38,7 +38,8 @@ import error rather than silently selecting another backend.
 | --- | --- |
 | Fast local verification | `make check` |
 | Production-facing change | `make check-full` |
-| Public docs and examples | `make check-docs` |
+| Public docs | `make check-docs` |
+| Example apps and Reflex chart registry/assets | `make check-examples` |
 | Public exports or annotations | `make check-api` |
 | Lazy imports and dependency boundaries | `make check-import` |
 | Validation and mutation behavior | `make check-errors` |
