@@ -575,8 +575,9 @@ def _require_elf_linkage(name: str, data: bytes, platform: str) -> None:
     if platform.startswith("manylinux_"):
         if interpreter and "ld-linux" not in interpreter:
             raise AssertionError(f"{name} is not linked against glibc: interpreter={interpreter!r}")
-        if not interpreter and "libc.so.6" not in dependencies:
-            raise AssertionError(f"{name} has no detectable glibc linkage")
+        # Shared objects normally have no PT_INTERP. A Rust cdylib with no
+        # dynamic libc dependency is also valid: it is self-contained and
+        # compatible with the tagged glibc floor.
         unexpected = sorted(set(dependencies) - _ELF_ALLOWED_GLIBC)
         if unexpected:
             raise AssertionError(f"{name} has unsupported glibc dependencies: {unexpected}")
@@ -590,10 +591,6 @@ def _require_elf_linkage(name: str, data: bytes, platform: str) -> None:
     elif platform.startswith("musllinux_"):
         if interpreter and "musl" not in interpreter:
             raise AssertionError(f"{name} is not linked against musl: interpreter={interpreter!r}")
-        if not interpreter and not any(
-            dependency.startswith(("libc.musl-", "ld-musl-")) for dependency in dependencies
-        ):
-            raise AssertionError(f"{name} has no detectable musl linkage")
         unexpected = sorted(
             dependency
             for dependency in dependencies

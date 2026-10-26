@@ -286,6 +286,16 @@ def test_musl_shared_library_without_interpreter_uses_needed_libc() -> None:
     verify_wheel._require_elf_linkage("native", binary, "musllinux_1_2_x86_64")
 
 
+@pytest.mark.parametrize("platform", ["manylinux_2_17_x86_64", "musllinux_1_2_x86_64"])
+def test_self_contained_elf_shared_library_needs_no_interpreter_or_libc(platform: str) -> None:
+    # ELF shared objects do not use PT_INTERP. A self-contained cdylib can
+    # also have no dynamic libc dependency and still be compatible with either
+    # platform's ABI floor.
+    binary = _elf_linkage_fixture(b"", ())
+
+    verify_wheel._require_elf_linkage("native", binary, platform)
+
+
 @pytest.mark.parametrize(
     "dependency",
     [b"libpthread.so.0", b"libdl.so.2", b"librt.so.1", b"libutil.so.1"],
