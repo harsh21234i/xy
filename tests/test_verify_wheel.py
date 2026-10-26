@@ -294,15 +294,16 @@ def _pe_linkage_fixture(dependency: bytes, *, delay_load: bool = False) -> bytes
     struct.pack_into("<H", data, 84, 240)
     struct.pack_into("<H", data, 88, 0x20B)
     struct.pack_into("<I", data, 196, 16)
-    struct.pack_into("<II", data, 208, 0x1000, 40)
     section = 328
     struct.pack_into("<IIII", data, section + 8, 512, 0x1000, 512, 0x200)
-    struct.pack_into("<IIIII", data, 0x200, 0, 0, 0, 0x1028, 0)
-    data[0x228 : 0x228 + len(dependency)] = dependency
     if delay_load:
         struct.pack_into("<II", data, 304, 0x1040, 32)
         struct.pack_into("<II", data, 0x240, 1, 0x1080)
         data[0x280 : 0x280 + len(dependency)] = dependency
+    else:
+        struct.pack_into("<II", data, 208, 0x1000, 40)
+        struct.pack_into("<IIIII", data, 0x200, 0, 0, 0, 0x1028, 0)
+        data[0x228 : 0x228 + len(dependency)] = dependency
     return bytes(data)
 
 
