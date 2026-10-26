@@ -19,7 +19,7 @@ dependencies = [
 # render client can never drift. The extra selects the tested Reflex window;
 # importing plain `xy` remains framework-free.
 reflex = [
-    "reflex>=0.9.6,<0.10",
+    "reflex>=0.9.6,<=0.10.0",
 ]
 
 [project.urls]

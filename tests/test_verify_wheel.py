@@ -85,7 +85,7 @@ DEFAULT_METADATA = "\n".join(
         "Requires-Python: >=3.11",
         "Requires-Dist: anywidget>=0.9",
         "Requires-Dist: numpy>=1.24",
-        "Requires-Dist: reflex>=0.9.6; extra == 'reflex'",
+        "Requires-Dist: reflex>=0.9.6,<=0.10.0; extra == 'reflex'",
         "Provides-Extra: reflex",
     ]
 )

@@ -27,8 +27,8 @@ interaction math.
 
 The integration is experimental and ships inside the published `xy`
 distribution. Install `xy[reflex]` so the environment also selects a supported
-Reflex version (`>=0.9.6,<0.10`), then import it as `reflex_xy`. The supported
-window is tested at both its minimum and newest released version in CI. See
+Reflex version (`>=0.9.6,<=0.10.0`), then import it as `reflex_xy`. CI tests
+the minimum, newest 0.9.x, and 0.10.0 releases. See
 [Deployment Recipes](/docs/xy/guides/deployment-recipes/).
 
 ## Choose a data tier

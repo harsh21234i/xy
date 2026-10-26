@@ -44,7 +44,6 @@ REFLEX_OPTIONAL_DEPENDENCY = "reflex>=0.9.6,<=0.10.0"
 REFLEX_SPECIFIER = "<=0.10.0,>=0.9.6"
 
 
-
 def _job_blocks(text: str) -> dict[str, str]:
     lines = text.splitlines()
     try:
@@ -866,7 +865,9 @@ def validate_ci_workflow(path: Path = DEFAULT_CI_WORKFLOW) -> list[str]:
     reflex_job = jobs.get("reflex_compatibility", "")
     matrix_values, matrix_unsafe = _direct_yaml_key_values(reflex_job, "reflex-version", indent=8)
     if matrix_values != ['["0.9.6", "0.9.13", "0.10.0"]'] or matrix_unsafe:
-        errors.append("CI reflex_compatibility job must test exactly Reflex 0.9.6, 0.9.13, and 0.10.0")
+        errors.append(
+            "CI reflex_compatibility job must test exactly Reflex 0.9.6, 0.9.13, and 0.10.0"
+        )
     if _has_yaml_key(reflex_job, "exclude", indent=8):
         errors.append("CI reflex_compatibility job must not exclude compatibility versions")
     if _has_yaml_key(reflex_job, "include", indent=8):
@@ -1271,7 +1272,6 @@ def validate_codspeed_workflow(path: Path = DEFAULT_CODSPEED_WORKFLOW) -> list[s
         "benchmarks/test_codspeed_kernels.py --codspeed",
     )
     return errors
-
 
 
 def validate_all_workflows(

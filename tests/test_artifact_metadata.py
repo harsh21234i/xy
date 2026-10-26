@@ -18,10 +18,10 @@ def _metadata(reflex_requirement: str) -> object:
 
 
 def test_bounded_reflex_metadata_is_accepted() -> None:
-    assert dependency_metadata_errors(_metadata('reflex<0.10,>=0.9.6; extra == "reflex"')) == []
+    assert dependency_metadata_errors(_metadata('reflex<=0.10.0,>=0.9.6; extra == "reflex"')) == []
 
 
 def test_unbounded_reflex_metadata_is_rejected() -> None:
     errors = dependency_metadata_errors(_metadata('reflex>=0.9.6; extra == "reflex"'))
 
-    assert any("reflex" in error and "0.9.6" in error and "0.10" in error for error in errors)
+    assert any("reflex" in error and "0.9.6" in error and "0.10.0" in error for error in errors)

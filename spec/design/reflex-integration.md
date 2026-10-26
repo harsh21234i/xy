@@ -1123,13 +1123,14 @@ tests/reflex_adapter/        token/registry/var/data-var/plan/factory/bridge/
 root beside `register()`/`release()`.
 
 The core `python/xy` package itself stays Reflex-free (CLAUDE.md rule).
-`xy[reflex]` adds full `reflex>=0.9.6` for now — the `reflex-base` split covers
-components/vars but not yet App/state-manager access; revisit when a smaller
-supported surface exists.
+`xy[reflex]` selects the tested Reflex range `>=0.9.6,<=0.10.0` — the
+`reflex-base` split covers components/vars but not yet App/state-manager access;
+revisit when a smaller supported surface exists. The extra stops at 0.10.0,
+the newest release covered by the compatibility matrix.
 
 **Versioning & releases.** The integration ships in every `xy` wheel and sdist,
 so it shares the core's version and bare `vX.Y.Z` release tags. The published
-extra is dependency metadata only: it adds the supported Reflex floor without
+extra is dependency metadata only: it selects the tested Reflex range without
 creating another distribution or release pipeline.
 
 ## 8. Superseded: the HTTP-routes draft
