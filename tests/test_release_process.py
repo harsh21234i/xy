@@ -205,15 +205,27 @@ def test_every_native_wheel_target_runs_the_install_smoke() -> None:
 
     assert wheel_entries, "the native wheel matrix must not be empty"
     assert all(re.search(r"\bnative: true\b", line) for line in wheel_entries), wheel_entries
-
-    smoke = re.search(
-        r"(?ms)^      - name: Verify the wheel installs and loads the native core\n"
-        r"(?P<step>.*?)(?=^      - |\n  wasm:)",
-        build,
-    )
-    assert smoke is not None, "the native wheel matrix requires an install smoke step"
-    assert re.search(r"^        if: matrix\.native$", smoke["step"], re.MULTILINE)
-    assert re.search(r'^          "\$py" scripts/wheel_smoke\.py$', smoke["step"], re.MULTILINE)
+    targets = set(re.findall(r"plat: ([A-Za-z0-9_]+)", build))
+    assert targets == {
+        "manylinux_2_17_x86_64",
+        "manylinux_2_17_aarch64",
+        "manylinux_2_17_armv7l",
+        "musllinux_1_2_x86_64",
+        "musllinux_1_2_aarch64",
+        "musllinux_1_2_armv7l",
+        "macosx_10_12_x86_64",
+        "macosx_11_0_arm64",
+        "win_amd64",
+        "win32",
+        "win_arm64",
+    }
+    assert all(re.search(r"\bsmoke: [A-Za-z0-9-]+", line) for line in wheel_entries), wheel_entries
+    assert "if: matrix.smoke == 'host'" in build
+    assert "if: matrix.smoke == 'manylinux-armv7'" in build
+    assert "if: matrix.smoke == 'alpine'" in build
+    assert "if: matrix.smoke == 'alpine-armv7'" in build
+    assert "docker/setup-qemu-action@" in build
+    assert "scripts/wheel_smoke.py" in build
 
 
 def test_post_release_workflow_declares_the_dispatch_contract() -> None:

@@ -30,25 +30,26 @@ python -c "import xy; print(xy.__version__)"
 
 ## Supported platforms
 
-Prebuilt native wheels are published only for targets that the release
-workflow can install, load, and exercise on a matching hosted runner.
+XY supports the platforms below. The PyPI column describes only the files in
+the current 0.0.1 upload, not whether XY supports the platform.
 
-| Platform | Compatibility | Architecture | Release artifact |
-| --- | --- | --- | --- |
-| Linux | glibc (`manylinux_2_17`) | `x86_64` | Native wheel; release workflow runs install and native-kernel smoke tests |
-| macOS | macOS 11+ on Apple silicon | `arm64` | Native wheel; release workflow runs install and native-kernel smoke tests |
-| Windows | Native Windows | `x86_64` | Native wheel; release workflow runs install and native-kernel smoke tests |
-| WebAssembly | Pyodide 314 (Emscripten, PEP 783) | `wasm32` | PyEmscripten wheel; release workflow runs a runtime load probe |
+| Platform | Compatibility | Architectures | XY support | PyPI 0.0.1 wheel |
+| --- | --- | --- | --- | --- |
+| macOS | macOS 10.12+ on Intel; macOS 11+ on Apple silicon | `x86_64`, `arm64` | Supported | Included |
+| Linux | glibc (`manylinux_2_17`) | `x86_64`, `aarch64`, `armv7l` | Supported | Included |
+| Linux | musl (`musllinux_1_2`, including Alpine) | `x86_64`, `aarch64`, `armv7l` | Supported | Included |
+| Windows | Native Windows | `x86_64`, `x86`, `arm64` | Supported | Not included |
+| WebAssembly | Pyodide 314 (Emscripten, PEP 783) | `wasm32` | Supported | Not in 0.0.1 (on PyPI since 0.0.3) |
 
-Other architectures and operating systems may be buildable from source with a
-compatible Rust toolchain, but are not part of the published wheel matrix until
-the release workflow can run an install and native-kernel smoke test for them.
-These targets describe future release artifacts; changing the matrix does not add
-files retroactively to versions already published on PyPI.
+Windows is supported by XY's native core and release pipeline. The current
+0.0.1 PyPI upload does not include Windows wheels or a source distribution, so
+`uv add xy` and `python -m pip install xy` cannot install it directly on
+Windows yet. Until a Windows wheel is published, install the tagged source
+with a Rust MSVC toolchain as described below.
 
 The runtime-verified WebAssembly wheel targets the standardized PEP 783
-`pyemscripten_2026_0_wasm32` platform and is published alongside the native
-wheels. In-browser Python installs it by package name —
+`pyemscripten_2026_0_wasm32` platform and, as of 0.0.3, is published to PyPI
+alongside the native wheels. In-browser Python installs it by package name —
 `micropip.install("xy")`, or `%pip install xy` in a JupyterLite notebook.
 This target runs XY's Python and Rust core inside Pyodide; it is separate
 from the JavaScript/WebGL client included with every chart. See

@@ -277,7 +277,7 @@ release-timezone = "America/Los_Angeles"
 # published version from, and the shape every existing release already carries.
 tag-prefix = "v"
 
-# `xy` cannot be built by `uv build` on one runner: it publishes three
+# `xy` cannot be built by `uv build` on one runner: it publishes eleven
 # runtime-verified native platform wheels, a runtime-verified PyEmscripten wheel and an
 # sdist, each needing its own operating system or toolchain. So the build is
 # delegated to a workflow this repository owns, and the pipeline keeps
@@ -288,16 +288,23 @@ tag-prefix = "v"
 # and uploads nothing is indistinguishable from one never configured, and PyPI
 # accepts a version exactly once. Naming every platform here means an
 # incomplete set stops the release before the approval instead of shipping a
-# version some users cannot install. The native matrix is limited to targets
-# that this workflow can install and exercise on matching hosted runners.
+# version some users cannot install.
 [[tool.reflex-release.custom-build]]
 packages = ["xy"]
 workflow = "build_release_artifacts.yml"
 expect-artifacts = [
     "*.tar.gz",
     "*-manylinux_2_17_x86_64.whl",
+    "*-manylinux_2_17_aarch64.whl",
+    "*-manylinux_2_17_armv7l.whl",
+    "*-musllinux_1_2_x86_64.whl",
+    "*-musllinux_1_2_aarch64.whl",
+    "*-musllinux_1_2_armv7l.whl",
+    "*-macosx_10_12_x86_64.whl",
     "*-macosx_11_0_arm64.whl",
     "*-win_amd64.whl",
+    "*-win32.whl",
+    "*-win_arm64.whl",
     "*-pyemscripten_2026_0_wasm32.whl",
 ]
 
