@@ -35,10 +35,10 @@ workflow can install, load, and exercise on a matching hosted runner.
 
 | Platform | Compatibility | Architecture | Release artifact |
 | --- | --- | --- | --- |
-| Linux | glibc (`manylinux_2_17`) | `x86_64` | Native wheel built and runtime verified by release workflow |
-| macOS | macOS 11+ on Apple silicon | `arm64` | Native wheel built and runtime verified by release workflow |
-| Windows | Native Windows | `x86_64` | Native wheel built and runtime verified by release workflow |
-| WebAssembly | Pyodide 314 (Emscripten, PEP 783) | `wasm32` | PyEmscripten wheel built and runtime verified by release workflow |
+| Linux | glibc (`manylinux_2_17`) | `x86_64` | Native wheel; release workflow runs install and native-kernel smoke tests |
+| macOS | macOS 11+ on Apple silicon | `arm64` | Native wheel; release workflow runs install and native-kernel smoke tests |
+| Windows | Native Windows | `x86_64` | Native wheel; release workflow runs install and native-kernel smoke tests |
+| WebAssembly | Pyodide 314 (Emscripten, PEP 783) | `wasm32` | PyEmscripten wheel; release workflow runs a runtime load probe |
 
 Other architectures and operating systems may be buildable from source with a
 compatible Rust toolchain, but are not part of the published wheel matrix until

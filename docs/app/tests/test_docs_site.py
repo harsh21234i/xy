@@ -1578,9 +1578,12 @@ def test_installation_distinguishes_supported_targets_from_pypi_artifacts() -> N
     wasm_row = next(line for line in content.splitlines() if line.startswith("| WebAssembly |"))
 
     assert "`x86_64`" in windows_row
-    assert "Native wheel built and runtime verified by release workflow" in windows_row
+    assert (
+        "Native wheel; release workflow runs install and native-kernel smoke tests" in windows_row
+    )
     assert "Pyodide 314" in wasm_row
-    assert "PyEmscripten wheel built and runtime verified by release workflow" in wasm_row
+    assert "`wasm32`" in wasm_row
+    assert "PyEmscripten wheel; release workflow runs a runtime load probe" in wasm_row
     assert "Other architectures and operating systems" in content
     assert "runtime-verified WebAssembly wheel" in content
     assert "`pyemscripten_2026_0_wasm32` platform" in content

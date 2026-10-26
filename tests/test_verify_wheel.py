@@ -224,8 +224,12 @@ def test_platform_and_symbol_checks_require_native_mode(options: dict[str, objec
         verify_wheel.verify_wheel(Path("missing.whl"), expect_native=None, **options)
 
 
-def _elf_linkage_fixture(interpreter: bytes, dependency: bytes, version: bytes = b"") -> bytes:
-    data = bytearray(512)
+def _elf_linkage_fixture(
+    interpreter: bytes, dependency: bytes | tuple[bytes, ...], version: bytes = b""
+) -> bytes:
+    dependencies = (dependency,) if isinstance(dependency, bytes) else dependency
+    dynamic_size = (3 + len(dependencies)) * 16
+    data = bytearray(768)
     data[:4] = b"\x7fELF"
     data[4:8] = bytes([2, 1, 1, 0])
     struct.pack_into("<H", data, 16, 3)
@@ -236,16 +240,22 @@ def _elf_linkage_fixture(interpreter: bytes, dependency: bytes, version: bytes =
     struct.pack_into("<H", data, 54, 56)
     struct.pack_into("<H", data, 56, 3)
     # A load segment covering the fixture's dynamic data and string table.
-    struct.pack_into("<IIQQQQQQ", data, 64, 1, 0, 0, 0x400000, 0, 512, 512, 0)
+    struct.pack_into("<IIQQQQQQ", data, 64, 1, 0, 0, 0x400000, 0, 768, 768, 0)
     struct.pack_into("<IIQQQQQQ", data, 120, 3, 0, 240, 0, 0, len(interpreter), len(interpreter), 1)
-    struct.pack_into("<IIQQQQQQ", data, 176, 2, 0, 280, 0, 0, 64, 64, 1)
+    struct.pack_into("<IIQQQQQQ", data, 176, 2, 0, 280, 0, 0, dynamic_size, dynamic_size, 1)
     data[240 : 240 + len(interpreter)] = interpreter
-    strings = b"\0" + dependency + b"\0" + version + b"\0"
-    data[384 : 384 + len(strings)] = strings
-    struct.pack_into("<QQ", data, 280, 5, 0x400000 + 384)
+    strings = b"\0"
+    needed_indices = []
+    for dependency_name in dependencies:
+        needed_indices.append(len(strings))
+        strings += dependency_name + b"\0"
+    strings += version + b"\0"
+    data[512 : 512 + len(strings)] = strings
+    struct.pack_into("<QQ", data, 280, 5, 0x400000 + 512)
     struct.pack_into("<QQ", data, 296, 10, len(strings))
-    struct.pack_into("<QQ", data, 312, 1, 1)
-    struct.pack_into("<QQ", data, 328, 0, 0)
+    for index, string_index in enumerate(needed_indices):
+        struct.pack_into("<QQ", data, 312 + index * 16, 1, string_index)
+    struct.pack_into("<QQ", data, 312 + len(needed_indices) * 16, 0, 0)
     return bytes(data)
 
 
@@ -285,6 +295,22 @@ def test_elf_linkage_accepts_manylinux2014_system_libraries(dependency: bytes) -
     verify_wheel._require_elf_linkage("native", binary, "manylinux_2_17_x86_64")
 
 
+def test_elf_linkage_accepts_combined_zig_manylinux_system_dependencies() -> None:
+    binary = _elf_linkage_fixture(
+        b"/lib64/ld-linux-x86-64.so.2\0",
+        (
+            b"libc.so.6",
+            b"libm.so.6",
+            b"libgcc_s.so.1",
+            b"ld-linux-x86-64.so.2",
+            b"libpthread.so.0",
+            b"libdl.so.2",
+        ),
+        b"GLIBC_2.17",
+    )
+    verify_wheel._require_elf_linkage("native", binary, "manylinux_2_17_x86_64")
+
+
 def _pe_linkage_fixture(dependency: bytes, *, delay_load: bool = False) -> bytes:
     data = bytearray(0x400)
     data[:2] = b"MZ"
@@ -297,6 +323,10 @@ def _pe_linkage_fixture(dependency: bytes, *, delay_load: bool = False) -> bytes
     section = 328
     struct.pack_into("<IIII", data, section + 8, 512, 0x1000, 512, 0x200)
     if delay_load:
+        struct.pack_into("<II", data, 208, 0x1000, 40)
+        struct.pack_into("<IIIII", data, 0x200, 0, 0, 0, 0x1028, 0)
+        regular_import = b"kernel32.dll\0"
+        data[0x228 : 0x228 + len(regular_import)] = regular_import
         struct.pack_into("<II", data, 304, 0x1040, 32)
         struct.pack_into("<II", data, 0x240, 1, 0x1080)
         data[0x280 : 0x280 + len(dependency)] = dependency
