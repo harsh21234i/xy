@@ -13,7 +13,7 @@ which is sometimes deliberate, and the notes say which.
 
 ## In one line
 
-- **11** mark style properties across **21** mark kinds, drawn by all three renderers.
+- **11** mark style properties across **22** mark kinds, drawn by all three renderers.
 - **48** stable chrome slots, CSS- and Tailwind-addressable in the browser; **10** of them reach the native writers — nine through `styles={slot: ...}` itself, and `root` through the chart-level `style=` token bag.
 - **1** shipped extension point.
 - **1** known default divergence between renderers, listed below rather than left to be discovered.
@@ -26,19 +26,19 @@ one honors.
 
 | property | vocabulary | mark kinds | webgl | svg | native | status |
 |---|---|---|---|---|---|---|
-| `opacity` | css | `area`, `bar`, `box`, `column`, `contour`, `ecdf`, `error_band`, `errorbar`, `heatmap`, `hexbin`, `hist`, `histogram`, `line`, `ribbon`, `scatter`, `segments`, `stairs`, `stem`, `step`, `triangle_mesh`, `violin` | full | full | full | shipped |
+| `opacity` | css | `area`, `bar`, `box`, `column`, `contour`, `ecdf`, `error_band`, `errorbar`, `funnel`, `heatmap`, `hexbin`, `hist`, `histogram`, `line`, `ribbon`, `scatter`, `segments`, `stairs`, `stem`, `step`, `triangle_mesh`, `violin` | full | full | full | shipped |
 | `fill` | svg | `area`, `bar`, `box`, `column`, `error_band`, `hist`, `histogram`, `scatter`, `triangle_mesh`, `violin` | full | full | full | shipped |
-| `fill-opacity` | svg | `area`, `bar`, `box`, `column`, `error_band`, `heatmap`, `hexbin`, `hist`, `histogram`, `ribbon`, `scatter`, `triangle_mesh`, `violin` | full | full | full | shipped |
-| `stroke` | svg | `area`, `bar`, `box`, `column`, `contour`, `ecdf`, `error_band`, `errorbar`, `hist`, `histogram`, `line`, `ribbon`, `scatter`, `segments`, `stairs`, `stem`, `step`, `triangle_mesh` | full | full | full | shipped |
-| `stroke-opacity` | svg | `area`, `bar`, `box`, `column`, `contour`, `ecdf`, `error_band`, `errorbar`, `hist`, `histogram`, `line`, `ribbon`, `scatter`, `segments`, `stairs`, `stem`, `step`, `triangle_mesh` | full | full | full | shipped |
-| `stroke-width` | svg | `area`, `bar`, `box`, `column`, `contour`, `ecdf`, `error_band`, `errorbar`, `hist`, `histogram`, `line`, `ribbon`, `scatter`, `segments`, `stairs`, `stem`, `step`, `triangle_mesh` | full | full | full | shipped |
+| `fill-opacity` | svg | `area`, `bar`, `box`, `column`, `error_band`, `funnel`, `heatmap`, `hexbin`, `hist`, `histogram`, `ribbon`, `scatter`, `triangle_mesh`, `violin` | full | full | full | shipped |
+| `stroke` | svg | `area`, `bar`, `box`, `column`, `contour`, `ecdf`, `error_band`, `errorbar`, `funnel`, `hist`, `histogram`, `line`, `ribbon`, `scatter`, `segments`, `stairs`, `stem`, `step`, `triangle_mesh` | full | full | full | shipped |
+| `stroke-opacity` | svg | `area`, `bar`, `box`, `column`, `contour`, `ecdf`, `error_band`, `errorbar`, `funnel`, `hist`, `histogram`, `line`, `ribbon`, `scatter`, `segments`, `stairs`, `stem`, `step`, `triangle_mesh` | full | full | full | shipped |
+| `stroke-width` | svg | `area`, `bar`, `box`, `column`, `contour`, `ecdf`, `error_band`, `errorbar`, `funnel`, `hist`, `histogram`, `line`, `ribbon`, `scatter`, `segments`, `stairs`, `stem`, `step`, `triangle_mesh` | full | full | full | shipped |
 | `stroke-dasharray` | svg | `area`, `ecdf`, `line`, `stairs`, `step` | full | full | full | shipped |
 | `stroke-linecap` | svg | `ecdf`, `line`, `stairs`, `step` | full | full | full | shipped |
 | `border-radius` | css | `bar`, `column`, `hist`, `histogram` | full | full | full | shipped |
 | `wedge-gap` | xy | `bar`, `column`, `hist`, `histogram` | full | full | full | shipped |
 | `marker-shape` | xy | `scatter` | full | full | full | shipped |
 
-### Notes
+### Mark style notes
 
 - **`opacity`** — Multiplies the mark's own alpha in every renderer.
 - **`fill`** — A plain color compiles to the mark's paint; a `linear-gradient(...)` compiles to a gradient and is accepted only by area and rect kinds, which are the ones with a gradient program.
@@ -113,7 +113,7 @@ contracted in [export.md](export.md) §9 and pinned by
 | `axis_title` | full | partial | partial |
 | `annotation_label` | full | none | none |
 
-### Notes
+### Chrome slot notes
 
 - **`root`** (via `chart style=`) — `styles={'root': ...}` is browser-only, but the chart-level `style=` token bag targets the same element and every renderer reads it (`spec['dom']['style']`). Prefer it for anything that must survive export.
 - **`title`** (via `styles={'title': ...}`) — Vector (SVG, PDF) honors font-size, font-weight, font-style, font-family, letter-spacing, opacity and the text paint (`fill`, or `color`). The raster writer's glyph primitive takes a size and one RGBA paint and nothing else, so it honors font-size and the paint only — font-weight, font-style, font-family, letter-spacing and opacity are vector-only rather than silently approximated. Properties outside the subset stay browser-only.
@@ -136,7 +136,7 @@ Ways to add behavior the core does not ship, without forking it.
 | mark_plugin_shader | planned | `—` | — |
 | custom_renderer | planned | `—` | — |
 
-### Notes
+### Extension point notes
 
 - **mark_plugin_composition** — A calc over declared columns plus a build that returns built-in marks. Its output is ordinary traces, so it reuses the built-in rendering, picking, and export paths rather than reimplementing them.
 - **mark_plugin_shader** — §24's WGSL/GLSL snippet pair. Deferred: a plugin with its own shader reuses none of the built-in rendering, picking, or export paths and would have to reimplement them.
